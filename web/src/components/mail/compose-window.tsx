@@ -1,11 +1,13 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useCallback, useState, useTransition } from "react";
 
 import { discardDraft, draftMessageWithAI, saveDraft, sendMessage, undoSend } from "@/app/actions";
+import { htmlToText, textToHtml } from "@/lib/mail/format";
 
 import Icon from "./icon";
 import { useMailUI, type ComposeDraft } from "./mail-ui";
+import RichEditor from "./rich-editor";
 
 export default function ComposeWindow({ initial }: { initial: ComposeDraft }) {
   const { closeCompose, openCompose, showToast } = useMailUI();
@@ -14,12 +16,22 @@ export default function ComposeWindow({ initial }: { initial: ComposeDraft }) {
   const [showCc, setShowCc] = useState(false);
   const [cc, setCc] = useState("");
   const [pending, startTransition] = useTransition();
+  const [bodyText, setBodyText] = useState(() => htmlToText(initial.body));
+  const [showFormatting, setShowFormatting] = useState(true);
+  // Bumped to remount the editor when its content is replaced (e.g. by an AI draft).
+  const [editorKey, setEditorKey] = useState(0);
+  const [linkRequest, setLinkRequest] = useState(0);
+
+  const onBodyChange = useCallback((html: string, text: string) => {
+    setDraft((current) => ({ ...current, body: html }));
+    setBodyText(text);
+  }, []);
 
   const update = (field: keyof ComposeDraft) => (event: { target: { value: string } }) =>
     setDraft((current) => ({ ...current, [field]: event.target.value }));
 
   const recipients = [draft.to, cc].filter((value) => value.trim()).join(", ");
-  const isEmpty = !recipients && !draft.subject.trim() && !draft.body.trim();
+  const isEmpty = !recipients && !draft.subject.trim() && !bodyText.trim();
   const message = { to: recipients, subject: draft.subject, body: draft.body, draftId: draft.draftId };
 
   const send = () => {
@@ -59,8 +71,10 @@ export default function ComposeWindow({ initial }: { initial: ComposeDraft }) {
 
   const writeWithAI = () => {
     startTransition(async () => {
-      const body = await draftMessageWithAI(recipients, draft.subject);
-      setDraft((current) => ({ ...current, body }));
+      const text = await draftMessageWithAI(recipients, draft.subject);
+      setDraft((current) => ({ ...current, body: textToHtml(text) }));
+      setBodyText(text);
+      setEditorKey((key) => key + 1);
     });
   };
 
@@ -110,18 +124,38 @@ export default function ComposeWindow({ initial }: { initial: ComposeDraft }) {
             <span>Subject</span>
             <input aria-label="Subject" value={draft.subject} onChange={update("subject")} />
           </label>
-          <textarea
-            aria-label="Message body"
-            autoFocus={Boolean(draft.to)}
+          <RichEditor
+            key={editorKey}
+            initialHtml={draft.body}
             placeholder="Write something thoughtful..."
-            value={draft.body}
-            onChange={update("body")}
+            showToolbar={showFormatting}
+            autoFocus={Boolean(draft.to)}
+            onChange={onBodyChange}
+            linkRequest={linkRequest}
           />
           <div className="compose-footer">
             <button className="send-button" onClick={send} disabled={pending}>
               Send <kbd>⌘ ↵</kbd>
             </button>
             <div>
+              <button
+                className={`icon-button ${showFormatting ? "toggled" : ""}`}
+                aria-label="Formatting options"
+                aria-pressed={showFormatting}
+                data-tooltip="Formatting options"
+                onClick={() => setShowFormatting((value) => !value)}
+              >
+                <Icon name="format" size={18} />
+              </button>
+              <button
+                className="icon-button"
+                aria-label="Insert link"
+                data-tooltip="Insert link (⌘K)"
+                onMouseDown={(event) => event.preventDefault()}
+                onClick={() => setLinkRequest((value) => value + 1)}
+              >
+                <Icon name="link" size={17} />
+              </button>
               <button className="icon-button" aria-label="Attach" title="Attachments need a connected mail provider" disabled>
                 <Icon name="paperclip" size={18} />
               </button>

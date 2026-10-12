@@ -24,10 +24,50 @@ export function bodyToText(body: BodyBlock[]) {
   const [first, ...rest] = body;
   const blocks = first?.type === "p" && GREETING.test(first.text.trim()) && rest.length ? rest : body;
   return blocks
-    .map((block) =>
-      block.type === "p" ? block.text : block.items.map((item) => `${item.title}: ${item.text}`).join(" "),
-    )
+    .map((block) => {
+      if (block.type === "p") return block.text;
+      if (block.type === "html") return htmlToText(block.html);
+      return block.items.map((item) => `${item.title}: ${item.text}`).join(" ");
+    })
     .join(" ");
+}
+
+/** Rough plain text for previews. The result is rendered as text, never as HTML. */
+export function htmlToText(html: string) {
+  return html
+    .replace(/<(br|\/p|\/div|\/li|\/blockquote)[^>]*>/gi, " ")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+export function escapeHtml(text: string) {
+  return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+/** Converts plain text (e.g. an AI draft) into composer HTML. */
+export function textToHtml(text: string) {
+  return text
+    .split("\n")
+    .map((line) => `<div>${line.trim() ? escapeHtml(line) : "<br>"}</div>`)
+    .join("");
+}
+
+/** Converts stored body blocks back into composer HTML, for reopening drafts. */
+export function bodyToHtml(body: BodyBlock[]) {
+  return body
+    .map((block) => {
+      if (block.type === "html") return block.html;
+      if (block.type === "p") return textToHtml(block.text);
+      return `<ol>${block.items.map((item) => `<li><b>${escapeHtml(item.title)}</b> ${escapeHtml(item.text)}</li>`).join("")}</ol>`;
+    })
+    .join("<div><br></div>");
 }
 
 export function textToBody(text: string): BodyBlock[] {

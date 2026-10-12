@@ -13,6 +13,7 @@ type Props = {
   selectedId?: string;
   unreadOnly: boolean;
   query?: string;
+  unreadCount: number;
   /** Which inboxes are shown, e.g. "All inboxes". */
   scope: string;
   /** Mark each card with its account when several inboxes are mixed together. */
@@ -26,6 +27,7 @@ export default function MessageList({
   threads,
   selectedId,
   unreadOnly,
+  unreadCount,
   query,
   scope,
   showAccounts,
@@ -59,6 +61,7 @@ export default function MessageList({
         </Link>
         <Link className={`filter ${unreadOnly ? "active" : ""}`} href={filterHref(true)} replace>
           Unread
+          {unreadCount > 0 && <span className="filter-count">{unreadCount}</span>}
         </Link>
         <span className="message-total">
           {threads.length} {threads.length === 1 ? "message" : "messages"}
@@ -78,6 +81,7 @@ export default function MessageList({
                 aria-label={`${thread.sender}: ${thread.subject}`}
                 aria-current={selectedId === thread.id ? "true" : undefined}
               />
+              <span className="read-state" aria-label={thread.unread ? "Unread" : "Read"} />
               <div className={`sender-avatar avatar-${thread.avatar}`}>
                 {thread.initials}
                 {showAccounts && thread.account && (
@@ -97,8 +101,14 @@ export default function MessageList({
                   {!thread.isDraft && <StarButton id={thread.id} starred={thread.starred} />}
                 </div>
                 <p>{thread.preview}</p>
-                {(thread.label || thread.hasAttachment) && (
+                {(thread.label || thread.hasAttachment || thread.receipt) && (
                   <div className="message-badges">
+                    {thread.receipt && (
+                      <span className={`receipt-badge ${thread.receipt}`}>
+                        <Icon name={thread.receipt === "read" ? "eye" : "check"} size={11} />
+                        {thread.receipt === "read" ? "Read" : "Not opened"}
+                      </span>
+                    )}
                     {thread.label && <span>{thread.label.name}</span>}
                     {thread.hasAttachment && <Icon name="paperclip" size={13} />}
                   </div>

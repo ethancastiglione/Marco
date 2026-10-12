@@ -896,3 +896,172 @@ a { color: inherit; text-decoration: none; }
   .account-add { display: none; }
   .search-box { width: auto; flex: 1; margin: 0 0 0 4px; }
 }
+
+/* Read / unread state */
+.message-card.unread::after { display: none; }
+.read-state {
+  position: absolute;
+  top: 26px;
+  left: 4px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: transparent;
+  pointer-events: none;
+}
+.message-card.unread .read-state { background: #3b6fd8; box-shadow: 0 0 0 3px rgba(59,111,216,.12); }
+.message-card:not(.unread) .message-main p { color: #a0a0a0; }
+.message-card:not(.unread) .subject-row > span { color: #555; font-weight: 400; }
+.filter-count {
+  display: inline-grid;
+  place-items: center;
+  min-width: 15px;
+  height: 14px;
+  margin-left: 5px;
+  padding: 0 4px;
+  border-radius: 7px;
+  color: #fff;
+  background: #3b6fd8;
+  font-size: 8px;
+  font-weight: 600;
+}
+.receipt-badge { display: inline-flex; align-items: center; gap: 3px; background: transparent !important; padding: 0 !important; color: #999 !important; }
+.receipt-badge.read { color: #3b6fd8 !important; }
+.read-receipt { display: flex; align-items: center; justify-content: flex-end; gap: 4px; margin-top: 8px; color: #aaa; font-size: 8px; }
+.read-receipt.read { color: #3b6fd8; }
+.icon-button.toggled { color: #202123; background: #ececec; }
+
+/* Rich text (composer output and rendered bodies) */
+.rich-body { margin-bottom: 15px; }
+.rich-body ol, .rich-body ul { margin: 6px 0 10px; padding-left: 22px; }
+.rich-body li { margin-bottom: 3px; }
+.rich-body li strong, .rich-body li span { display: inline; }
+.rich-body blockquote, .compose-editor blockquote { margin: 8px 0; padding-left: 12px; border-left: 3px solid #ddd; color: #666; }
+.rich-body a, .compose-editor a { color: #1a5fd0; text-decoration: underline; }
+.sent-body .rich-body { margin: 0; font-size: 10px; line-height: 1.6; }
+
+.rich-editor { position: relative; display: flex; flex: 1; min-height: 0; flex-direction: column; }
+.compose-editor {
+  flex: 1;
+  min-height: 0;
+  padding: 16px 18px;
+  overflow-y: auto;
+  outline: 0;
+  color: #333;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.compose-editor:empty::before { color: #aaa; content: attr(data-placeholder); pointer-events: none; }
+.compose-editor ol, .compose-editor ul { margin: 4px 0; padding-left: 24px; }
+
+.format-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1px;
+  margin: 0 12px 8px;
+  padding: 3px 6px;
+  border: 1px solid #e8e8e8;
+  border-radius: 10px;
+  background: #fafafa;
+}
+.fmt-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  height: 28px;
+  min-width: 28px;
+  justify-content: center;
+  padding: 0 5px;
+  border: 0;
+  border-radius: 7px;
+  color: #555;
+  background: transparent;
+  cursor: pointer;
+}
+.fmt-button:hover { color: #202123; background: #ededed; }
+.fmt-button.active { color: #202123; background: #e2e2e4; }
+.fmt-divider { width: 1px; height: 18px; margin: 0 4px; background: #e2e2e2; }
+.fmt-font-label { overflow: hidden; max-width: 86px; font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+.fmt-menu-anchor { position: relative; }
+.fmt-menu {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 0;
+  z-index: 12;
+  display: flex;
+  flex-direction: column;
+  min-width: 170px;
+  max-height: 300px;
+  padding: 6px;
+  overflow-y: auto;
+  border: 1px solid #e5e5e5;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 12px 32px rgba(0,0,0,.14);
+}
+.fmt-menu > button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 30px;
+  padding: 0 10px 0 28px;
+  border: 0;
+  border-radius: 7px;
+  color: #333;
+  background: transparent;
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.fmt-menu > button[aria-checked="true"] { padding-left: 8px; }
+.fmt-menu > button:hover { background: #f3f3f3; }
+.fmt-menu-size > button { padding-left: 12px; }
+.fmt-menu-color { min-width: 0; }
+.fmt-menu-align { min-width: 0; flex-direction: row; }
+.color-columns { display: flex; gap: 14px; padding: 4px; }
+.color-heading { display: block; margin-bottom: 6px; color: #888; font-size: 9px; font-weight: 500; }
+.color-grid { display: grid; grid-template-columns: repeat(8, 15px); gap: 3px; }
+.color-grid button { width: 15px; height: 15px; padding: 0; border: 1px solid rgba(0,0,0,.08); border-radius: 3px; cursor: pointer; }
+.color-grid button:hover { transform: scale(1.15); box-shadow: 0 1px 4px rgba(0,0,0,.25); }
+.align-row { display: flex; gap: 2px; }
+
+.format-toolbar [data-tooltip]:hover::after,
+.compose-footer [data-tooltip]:hover::after { top: auto; right: auto; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%); }
+
+.link-dialog {
+  position: absolute;
+  bottom: 52px;
+  left: 16px;
+  z-index: 14;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: min(340px, calc(100% - 32px));
+  padding: 14px;
+  border: 1px solid #e5e5e5;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 16px 40px rgba(0,0,0,.16);
+}
+.link-dialog strong { font-size: 11px; font-weight: 600; }
+.link-dialog label { display: flex; flex-direction: column; gap: 4px; color: #888; font-size: 9px; }
+.link-dialog input { height: 32px; padding: 0 10px; border: 1px solid #dedede; border-radius: 8px; outline: 0; color: #333; font-size: 11px; }
+.link-dialog input:focus { border-color: #3b6fd8; box-shadow: 0 0 0 3px rgba(59,111,216,.12); }
+.link-dialog-footer { display: flex; align-items: center; gap: 6px; }
+.link-dialog-footer a { margin-right: auto; color: #1a5fd0; font-size: 9px; }
+.link-cancel, .link-ok { height: 28px; padding: 0 12px; border: 0; border-radius: 7px; font-size: 10px; font-weight: 500; cursor: pointer; }
+.link-cancel { margin-left: auto; color: #555; background: #f1f1f1; }
+.link-dialog-footer a + .link-cancel { margin-left: 0; }
+.link-ok { color: #fff; background: #202123; }
+.link-ok:disabled { opacity: .4; cursor: default; }
+
+.compose-window { height: min(560px, calc(100vh - 60px)); }
+
+/* Tailwind's preflight strips list markers; composed mail needs them back. */
+.rich-body ul, .compose-editor ul { list-style: disc; }
+.rich-body ol, .compose-editor ol { list-style: decimal; }
+.format-toolbar { flex-wrap: nowrap; }
+.fmt-menu-more { right: 0; left: auto; flex-direction: row; min-width: 0; }
+.fmt-menu-more [data-tooltip]:hover::after { bottom: auto; top: calc(100% + 6px); }
+.fmt-menu-color { left: 50%; transform: translateX(-50%); }

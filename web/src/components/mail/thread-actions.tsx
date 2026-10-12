@@ -211,7 +211,7 @@ export function ThreadToolbar({ id, location, unread, position, hrefs }: Toolbar
               }
               disabled={pending}
             >
-              <Icon name="mail" size={17} />
+              <Icon name={unread ? "mailOpen" : "mail"} size={17} />
             </button>
           </>
         )}

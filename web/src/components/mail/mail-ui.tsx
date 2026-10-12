@@ -58,7 +58,8 @@ export default function MailUIProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+      const inEditor = event.target instanceof HTMLElement && event.target.isContentEditable;
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k" && !inEditor) {
         event.preventDefault();
         document.getElementById("mail-search")?.focus();
         return;

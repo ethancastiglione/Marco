@@ -36,6 +36,9 @@ async function MailView({ params, searchParams }: PageProps<"/[mailbox]/[[...thr
   const unreadOnly = search.filter === "unread";
   const { accounts, enabled } = await getAccountFilter();
   const threads = await mail.listThreads({ mailbox, q, unreadOnly, accounts: enabled });
+  const unreadCount = (
+    unreadOnly ? threads : threads.filter((candidate) => candidate.unread)
+  ).length;
   const scope =
     enabled.length === accounts.length
       ? "All inboxes"
@@ -70,6 +73,7 @@ async function MailView({ params, searchParams }: PageProps<"/[mailbox]/[[...thr
         threads={threads}
         selectedId={selectedId}
         unreadOnly={unreadOnly}
+        unreadCount={unreadCount}
         query={q}
         scope={scope}
         showAccounts={enabled.length > 1}

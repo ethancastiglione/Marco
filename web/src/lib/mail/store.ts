@@ -3,6 +3,7 @@ import "server-only";
 import { connection } from "next/server";
 
 import { bodyToText, initials, senderLabel, textToBody } from "./format";
+import { sanitizeEmailHtml } from "./html";
 import { me, seedAccounts, seedLabels, seedThreads } from "./seed";
 import {
   SYSTEM_MAILBOXES,
@@ -138,6 +139,7 @@ class InMemoryMailStore implements MailStore {
       label: this.labels.find((label) => thread.labelIds.includes(label.id)),
       hasAttachment: thread.messages.some((message) => message.attachments.length > 0),
       isDraft,
+      receipt: !isDraft && latest.fromMe ? (latest.readAt ? "read" : "sent") : undefined,
     };
   }
 
@@ -242,7 +244,7 @@ class InMemoryMailStore implements MailStore {
       to: recipients,
       sentAt: new Date().toISOString(),
       fromMe: true,
-      body: textToBody(message.body),
+      body: [{ type: "html" as const, html: sanitizeEmailHtml(message.body) }],
       attachments: [],
     };
 

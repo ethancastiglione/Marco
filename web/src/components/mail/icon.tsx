@@ -23,7 +23,28 @@ export type IconName =
   | "sparkle"
   | "star"
   | "trash"
-  | "users";
+  | "users"
+  | "undo"
+  | "redo"
+  | "bold"
+  | "italic"
+  | "underline"
+  | "strike"
+  | "textColor"
+  | "alignLeft"
+  | "alignCenter"
+  | "alignRight"
+  | "listOl"
+  | "listUl"
+  | "indent"
+  | "outdent"
+  | "quote"
+  | "clearFormat"
+  | "link"
+  | "format"
+  | "mailOpen"
+  | "eye"
+  | "checkDouble";
 
 const paths: Record<IconName, ReactNode> = {
   archive: (
@@ -97,6 +118,53 @@ const paths: Record<IconName, ReactNode> = {
       <path d="M5 7h14M9 7V4h6v3M7 7l1 13h8l1-13M10 11v5M14 11v5" />
     </>
   ),
+  undo: <path d="M9 14 4 9l5-5M4 9h10.5a5.5 5.5 0 0 1 0 11H11" />,
+  redo: <path d="m15 14 5-5-5-5M20 9H9.5a5.5 5.5 0 0 0 0 11H13" />,
+  bold: <path d="M7 5h6a3.5 3.5 0 0 1 0 7H7zM7 12h7a3.5 3.5 0 0 1 0 7H7z" strokeWidth="2.2" />,
+  italic: <path d="M10 5h8M6 19h8M14 5l-4 14" />,
+  underline: <path d="M7 4v7a5 5 0 0 0 10 0V4M5 20h14" />,
+  strike: <path d="M5 12h14M16.5 7.5C16 5.8 14.3 5 12 5c-2.8 0-4.5 1.3-4.5 3.2 0 1.5 1 2.4 2.7 3M8 16.5c.6 1.7 2.3 2.5 4.2 2.5 2.8 0 4.6-1.3 4.6-3.3 0-.9-.3-1.6-1-2.2" />,
+  textColor: <path d="m6.5 16 5.5-12 5.5 12M8.5 11.5h7" />,
+  alignLeft: <path d="M4 6h16M4 10h10M4 14h16M4 18h10" />,
+  alignCenter: <path d="M4 6h16M7 10h10M4 14h16M7 18h10" />,
+  alignRight: <path d="M4 6h16M10 10h10M4 14h16M10 18h10" />,
+  listOl: (
+    <>
+      <path d="M10 6h10M10 12h10M10 18h10" />
+      <path d="M4 5h1.5v4M4 9h3M4 14.5c0-.8.7-1.5 1.5-1.5S7 13.6 7 14.3c0 1.2-3 1.7-3 3.7h3" strokeWidth="1.3" />
+    </>
+  ),
+  listUl: (
+    <>
+      <path d="M10 6h10M10 12h10M10 18h10" />
+      <circle cx="5" cy="6" r="1.2" fill="currentColor" stroke="none" />
+      <circle cx="5" cy="12" r="1.2" fill="currentColor" stroke="none" />
+      <circle cx="5" cy="18" r="1.2" fill="currentColor" stroke="none" />
+    </>
+  ),
+  indent: <path d="M4 5h16M11 10h9M11 14h9M4 19h16M4 9l3.5 3L4 15" />,
+  outdent: <path d="M4 5h16M11 10h9M11 14h9M4 19h16M7.5 9 4 12l3.5 3" />,
+  quote: (
+    <path d="M6 17c-1.2-1-2-2.6-2-4.6C4 9 6 6.8 9 6M9.5 13a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0ZM16 17c-1.2-1-2-2.6-2-4.6 0-3.4 2-5.6 5-6.4M19.5 13a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0Z" />
+  ),
+  clearFormat: <path d="M6 5h12M12 5l-3 14M4 4l16 16" />,
+  link: (
+    <path d="M10 14a4.2 4.2 0 0 0 6 0l3-3a4.2 4.2 0 0 0-6-6l-1 1M14 10a4.2 4.2 0 0 0-6 0l-3 3a4.2 4.2 0 0 0 6 6l1-1" />
+  ),
+  format: <path d="M3.5 18 8 6l4.5 12M5 14h6M15 18v-6.5M15 14.5a2.5 2.5 0 1 1 5 0V18" />,
+  mailOpen: (
+    <>
+      <path d="M3.5 10 12 4l8.5 6v9.5h-17z" />
+      <path d="m4 10.5 8 5.5 8-5.5" />
+    </>
+  ),
+  eye: (
+    <>
+      <path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z" />
+      <circle cx="12" cy="12" r="2.8" />
+    </>
+  ),
+  checkDouble: <path d="m2.5 12.5 4 4L15 8M10.5 16.5 19 8" />,
   users: (
     <>
       <circle cx="9" cy="9" r="3" />

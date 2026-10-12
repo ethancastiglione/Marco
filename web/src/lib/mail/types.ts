@@ -48,7 +48,9 @@ export type Label = {
 
 export type BodyBlock =
   | { type: "p"; text: string }
-  | { type: "ol"; items: { title: string; text: string }[] };
+  | { type: "ol"; items: { title: string; text: string }[] }
+  /** Sanitized rich text from the composer. */
+  | { type: "html"; html: string };
 
 export type Attachment = {
   id: string;
@@ -66,6 +68,8 @@ export type Message = {
   body: BodyBlock[];
   attachments: Attachment[];
   fromMe: boolean;
+  /** For mail you sent: when the recipient opened it. */
+  readAt?: string;
 };
 
 /** Where a thread lives. Starred, snoozed and sent are derived views. */
@@ -99,6 +103,8 @@ export type ThreadSummary = {
   label?: Label;
   hasAttachment: boolean;
   isDraft: boolean;
+  /** Set when the latest message is yours: whether the recipient has opened it. */
+  receipt?: "read" | "sent";
 };
 
 export type MailboxCounts = Record<SystemMailbox, number>;
@@ -114,6 +120,7 @@ export type ListQuery = {
 export type OutgoingMessage = {
   to: string;
   subject: string;
+  /** HTML from the rich-text composer. */
   body: string;
   /** When sending an existing draft, the draft's thread id. */
   draftId?: string;

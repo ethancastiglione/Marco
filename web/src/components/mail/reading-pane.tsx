@@ -1,6 +1,7 @@
 import { Fragment } from "react";
 
-import { firstName, formatMessageTime, initials } from "@/lib/mail/format";
+import { bodyToHtml, firstName, formatMessageTime, initials } from "@/lib/mail/format";
+import { sanitizeEmailHtml } from "@/lib/mail/html";
 import type { Account, BodyBlock, Label, Message, Thread } from "@/lib/mail/types";
 
 import { me } from "@/lib/mail/seed";
@@ -21,7 +22,10 @@ type Props = {
 
 function Body({ blocks }: { blocks: BodyBlock[] }) {
   return blocks.map((block, index) =>
-    block.type === "p" ? (
+    block.type === "html" ? (
+      // Sanitized when stored; sanitized again here so rendering never trusts storage.
+      <div className="rich-body" key={index} dangerouslySetInnerHTML={{ __html: sanitizeEmailHtml(block.html) }} />
+    ) : block.type === "p" ? (
       <p key={index}>
         {block.text.split("\n").map((line, lineIndex) => (
           <Fragment key={lineIndex}>
@@ -101,6 +105,10 @@ function SentMessage({ message }: { message: Message }) {
       <div className="sent-body">
         <Body blocks={message.body} />
       </div>
+      <div className={`read-receipt ${message.readAt ? "read" : ""}`}>
+        <Icon name={message.readAt ? "checkDouble" : "check"} size={12} />
+        {message.readAt ? `Read ${formatMessageTime(message.readAt)}` : "Sent · not opened yet"}
+      </div>
     </div>
   );
 }
@@ -153,9 +161,7 @@ export default function ReadingPane({ thread, label, account, opened, position, 
               draftId: thread.id,
               to: thread.participants.map((person) => person.email || person.name).join(", "),
               subject: thread.subject,
-              body: thread.messages[0].body
-                .map((block) => (block.type === "p" ? block.text : ""))
-                .join("\n\n"),
+              body: bodyToHtml(thread.messages[0].body),
             }}
           />
         ) : (
