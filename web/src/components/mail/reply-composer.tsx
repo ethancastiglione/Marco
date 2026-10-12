@@ -39,6 +39,7 @@ export default function ReplyComposer({ id, recipient }: { id: string; recipient
     if (!canSend || sending) return;
     const sentHtml = html;
     const sentText = text;
+    const sentFiles = attachments.files;
     startSend(async () => {
       await replyToThread(id, sentHtml, attachments.files);
       replace("", "");
@@ -48,6 +49,7 @@ export default function ReplyComposer({ id, recipient }: { id: string; recipient
         undo: async () => {
           await undoReply(id);
           replace(sentHtml, sentText);
+          attachments.set(sentFiles);
         },
       });
     });

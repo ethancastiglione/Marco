@@ -3,6 +3,8 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
 import ComposeWindow from "./compose-window";
+import type { NewAttachment } from "@/lib/mail/types";
+
 import Icon from "./icon";
 import Panels, { type Panel } from "./panels";
 
@@ -11,6 +13,7 @@ export type ComposeDraft = {
   to: string;
   subject: string;
   body: string;
+  attachments?: NewAttachment[];
 };
 
 export type ToastState = {
@@ -22,6 +25,8 @@ type MailUI = {
   compose: ComposeDraft | null;
   openCompose: (draft?: Partial<ComposeDraft>) => void;
   closeCompose: () => void;
+  /** The open compose window registers a "save as draft" here, so opening another one never loses it. */
+  composeSaver: { current: (() => Promise<void>) | null };
   showToast: (toast: ToastState) => void;
   sidebarOpen: boolean;
   setSidebarOpen: (open: boolean) => void;
@@ -38,13 +43,20 @@ export function useMailUI() {
   return context;
 }
 
+/** True while a dialog is open; single-key shortcuts pause so they never act on mail behind it. */
+export function overlayOpen() {
+  return Boolean(document.querySelector('[aria-modal="true"]'));
+}
+
 export function isTypingTarget(target: EventTarget | null) {
   if (!(target instanceof HTMLElement)) return false;
   return target.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName);
 }
 
 export default function MailUIProvider({ children }: { children: ReactNode }) {
-  const [compose, setCompose] = useState<ComposeDraft | null>(null);
+  const [compose, setCompose] = useState<(ComposeDraft & { key: number }) | null>(null);
+  const composeSaver = useRef<(() => Promise<void>) | null>(null);
+  const composeCount = useRef(0);
   const [toast, setToast] = useState<ToastState | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [panel, setPanel] = useState<Panel | null>(null);
@@ -52,8 +64,11 @@ export default function MailUIProvider({ children }: { children: ReactNode }) {
   const closePanel = useCallback(() => setPanel(null), []);
   const toastTimer = useRef<number | undefined>(undefined);
 
-  const openCompose = useCallback((draft?: Partial<ComposeDraft>) => {
-    setCompose({ to: "", subject: "", body: "", ...draft });
+  const openCompose = useCallback(async (draft?: Partial<ComposeDraft>) => {
+    // Save whatever is already open before replacing it.
+    await composeSaver.current?.();
+    composeSaver.current = null;
+    setCompose({ to: "", subject: "", body: "", ...draft, key: ++composeCount.current });
   }, []);
   const closeCompose = useCallback(() => setCompose(null), []);
 
@@ -77,7 +92,7 @@ export default function MailUIProvider({ children }: { children: ReactNode }) {
         return;
       }
       if (event.key === "Escape") setSidebarOpen(false);
-      if (isTypingTarget(event.target) || event.metaKey || event.ctrlKey || event.altKey) return;
+      if (isTypingTarget(event.target) || event.metaKey || event.ctrlKey || event.altKey || overlayOpen()) return;
       if (event.key === "c") {
         event.preventDefault();
         openCompose();
@@ -94,7 +109,7 @@ export default function MailUIProvider({ children }: { children: ReactNode }) {
   }, [openCompose]);
 
   const value = useMemo(
-    () => ({ compose, openCompose, closeCompose, showToast, sidebarOpen, setSidebarOpen, panel, openPanel, closePanel }),
+    () => ({ compose, openCompose, closeCompose, composeSaver, showToast, sidebarOpen, setSidebarOpen, panel, openPanel, closePanel }),
     [compose, openCompose, closeCompose, showToast, sidebarOpen, panel, openPanel, closePanel],
   );
 
@@ -102,7 +117,7 @@ export default function MailUIProvider({ children }: { children: ReactNode }) {
     <MailUIContext.Provider value={value}>
       {children}
       <Panels panel={panel} onClose={closePanel} onOpen={openPanel} />
-      {compose && <ComposeWindow key={compose.draftId ?? "new"} initial={compose} />}
+      {compose && <ComposeWindow key={compose.key} initial={compose} />}
       {toast && (
         <div className="toast" role="status">
           <span>

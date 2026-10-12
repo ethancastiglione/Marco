@@ -67,7 +67,12 @@ export async function askAster(prompt: string, accounts: string[]): Promise<Aste
   }
 
   const words = question.replace(/[^\w\s@.-]/g, " ").split(/\s+/).filter((word) => word.length > 3 && !STOP_WORDS.has(word));
-  const results = words.length ? await mail.search(words.slice(0, 3).join(" "), accounts) : [];
+  // Try all the words together first; if that's too strict, fall back to any single word.
+  let results = words.length ? await mail.search(words.slice(0, 3).join(" "), accounts) : [];
+  for (const word of words) {
+    if (results.length) break;
+    results = await mail.search(word, accounts);
+  }
   if (results.length) {
     return {
       text: `Here's what I found for “${words.slice(0, 3).join(" ")}”:`,
@@ -81,4 +86,4 @@ export async function askAster(prompt: string, accounts: string[]): Promise<Aste
   };
 }
 
-const STOP_WORDS = new Set(["what", "when", "where", "which", "find", "show", "about", "from", "with", "that", "this", "have", "email", "emails", "mail", "message", "messages", "there", "please", "could", "would"]);
+const STOP_WORDS = new Set(["what", "when", "where", "which", "find", "show", "about", "from", "with", "that", "this", "have", "email", "emails", "mail", "message", "messages", "there", "please", "could", "would", "anything", "something", "everything", "thing", "things", "know", "tell", "know", "latest", "recent", "about"]);

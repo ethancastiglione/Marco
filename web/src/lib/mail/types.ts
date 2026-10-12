@@ -120,6 +120,9 @@ export type ListQuery = {
   sort?: SortOrder;
 };
 
+/** Where a thread was before a move, so Undo can put it back exactly. */
+export type ThreadPlacement = { location: ThreadLocation; snoozedUntil?: string };
+
 export type SortOrder = "newest" | "oldest" | "unread";
 
 export type NewAttachment = { name: string; size: string; kind: Attachment["kind"] };
@@ -148,4 +151,6 @@ export type OutgoingMessage = {
   /** When sending an existing draft, the draft's thread id. */
   draftId?: string;
   attachments?: NewAttachment[];
+  /** Which connected account sends it. Defaults to the first one. */
+  accountId?: string;
 };

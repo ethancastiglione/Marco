@@ -57,15 +57,12 @@ export function AddLabel({ children }: { children: ReactNode }) {
   const submit = () => {
     if (!name.trim()) return setAdding(false);
     startTransition(async () => {
-      try {
-        const label = await createLabel(name);
-        setName("");
-        setError("");
-        setAdding(false);
-        router.push(`/${label.id}`);
-      } catch (cause) {
-        setError(cause instanceof Error ? cause.message : "Couldn't create label");
-      }
+      const result = await createLabel(name);
+      if ("error" in result) return setError(result.error);
+      setName("");
+      setError("");
+      setAdding(false);
+      router.push(`/${result.id}`);
     });
   };
 

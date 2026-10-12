@@ -22,6 +22,7 @@ import {
   type Person,
   type SystemMailbox,
   type Thread,
+  type ThreadPlacement,
   type ThreadSummary,
 } from "./types";
 
@@ -35,14 +36,16 @@ export interface MailStore {
   counts(accounts?: string[]): Promise<MailboxCounts>;
   listThreads(query: ListQuery): Promise<ThreadSummary[]>;
   search(query: string, accounts?: string[]): Promise<SearchHit[]>;
-  searchPeople(term: string, accounts?: string[]): Promise<SearchPerson[]>;
+  /** People who sent (role "from") or received ("to") mail, matching `term`. */
+  searchPeople(term: string, accounts?: string[], role?: "from" | "to"): Promise<SearchPerson[]>;
   getThread(id: string): Promise<Thread | undefined>;
 
   setStarred(id: string, starred: boolean): Promise<void>;
   setRead(id: string, read: boolean): Promise<void>;
-  markAllRead(mailbox: string): Promise<void>;
-  move(id: string, location: "inbox" | "archive" | "trash"): Promise<void>;
-  snooze(id: string, until: string): Promise<void>;
+  markAllRead(mailbox: string, accounts?: string[]): Promise<void>;
+  move(id: string, location: "inbox" | "archive" | "trash"): Promise<ThreadPlacement>;
+  restore(id: string, placement: ThreadPlacement): Promise<void>;
+  snooze(id: string, until: string): Promise<ThreadPlacement>;
   reply(id: string, html: string, attachments?: NewAttachment[]): Promise<void>;
   setLabels(id: string, labelIds: string[]): Promise<void>;
   addAccount(email: string, name: string): Promise<Account>;
@@ -51,7 +54,7 @@ export interface MailStore {
   saveDraft(message: OutgoingMessage): Promise<string>;
   discard(id: string): Promise<void>;
   undoSend(id: string): Promise<void>;
-  createLabel(name: string): Promise<Label>;
+  createLabel(name: string): Promise<Label | { error: string }>;
 }
 
 export function isSystemMailbox(value: string): value is SystemMailbox {
@@ -277,13 +280,15 @@ class InMemoryMailStore implements MailStore {
       .sort((a, b) => b.score - a.score || b.lastAt.localeCompare(a.lastAt));
   }
 
-  async searchPeople(term: string, accounts?: string[]) {
+  async searchPeople(term: string, accounts?: string[], role: "from" | "to" = "from") {
     await connection();
     const needle = term.trim().toLowerCase();
     const people = new Map<string, SearchPerson>();
     for (const thread of this.threads) {
-      if (!inAccounts(thread, accounts)) continue;
-      for (const person of thread.participants) {
+      if (!inAccounts(thread, accounts) || thread.location === "trash") continue;
+      const involved = thread.messages.flatMap((message) => (role === "from" ? [message.from] : message.to));
+      const unique = [...new Map(involved.filter((person) => person.email !== me.email).map((person) => [person.email || person.name, person])).values()];
+      for (const person of unique) {
         const key = person.email || person.name;
         const existing = people.get(key);
         if (existing) existing.threads += 1;
@@ -309,21 +314,37 @@ class InMemoryMailStore implements MailStore {
     this.find(id).unread = !read;
   }
 
-  async markAllRead(mailbox: string) {
+  async markAllRead(mailbox: string, accounts?: string[]) {
     const now = Date.now();
-    for (const thread of this.threads) if (inMailbox(thread, mailbox, now)) thread.unread = false;
+    for (const thread of this.threads) {
+      if (inAccounts(thread, accounts) && inMailbox(thread, mailbox, now)) thread.unread = false;
+    }
+  }
+
+  private placement(thread: Thread): ThreadPlacement {
+    return { location: thread.location, snoozedUntil: thread.snoozedUntil };
   }
 
   async move(id: string, location: "inbox" | "archive" | "trash") {
     const thread = this.find(id);
+    const before = this.placement(thread);
     thread.location = location;
     thread.snoozedUntil = undefined;
+    return before;
+  }
+
+  async restore(id: string, placement: ThreadPlacement) {
+    const thread = this.find(id);
+    thread.location = placement.location;
+    thread.snoozedUntil = placement.snoozedUntil;
   }
 
   async snooze(id: string, until: string) {
     const thread = this.find(id);
+    const before = this.placement(thread);
     thread.snoozedUntil = until;
     thread.location = "inbox";
+    return before;
   }
 
   async reply(id: string, html: string, attachments?: NewAttachment[]) {
@@ -348,7 +369,9 @@ class InMemoryMailStore implements MailStore {
     const address = email.trim().toLowerCase();
     const existing = this.accounts.find((account) => account.email === address);
     if (existing) return existing;
-    const colors: AccountColor[] = ["green", "amber", "red", "blue"];
+    // Prefer a colour no other account uses, so every chip in the top bar is distinguishable.
+    const palette: AccountColor[] = ["green", "amber", "blue", "red", "ink"];
+    const colors = [...palette.filter((color) => !this.accounts.some((account) => account.color === color)), ...palette];
     const id = slugify(address.split("@")[0]) || `account-${this.accounts.length + 1}`;
     const label = name.trim() || address.split("@")[1]?.split(".")[0] || address;
     const account: Account = {
@@ -356,7 +379,7 @@ class InMemoryMailStore implements MailStore {
       name: label.charAt(0).toUpperCase() + label.slice(1),
       email: address,
       initial: (label[0] ?? "?").toUpperCase(),
-      color: colors[this.accounts.length % colors.length],
+      color: colors[0],
     };
     this.accounts.push(account);
     return account;
@@ -392,7 +415,7 @@ class InMemoryMailStore implements MailStore {
     const id = `m${Date.now().toString(36)}${this.nextId++}`;
     this.threads.push({
       id,
-      accountId: this.accounts[0].id,
+      accountId: this.accounts.find((account) => account.id === message.accountId)?.id ?? this.accounts[0].id,
       subject: message.subject,
       participants: recipients,
       labelIds: [],
@@ -423,7 +446,7 @@ class InMemoryMailStore implements MailStore {
 
   async createLabel(name: string) {
     const id = slugify(name);
-    if (!id || isSystemMailbox(id) || id === "search") throw new Error("That label name is reserved.");
+    if (!id || isSystemMailbox(id) || id === "search") return { error: "That name is reserved — try another." };
     const existing = this.labels.find((label) => label.id === id);
     if (existing) return existing;
     const label = { id, name: name.trim(), color: LABEL_COLORS[this.labels.length % LABEL_COLORS.length] };

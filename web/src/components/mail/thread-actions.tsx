@@ -4,11 +4,11 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useOptimistic, useRef, useState, useTransition } from "react";
 
-import { markAllRead, moveThread, setRead, setStarred, setThreadLabels, snoozeThread } from "@/app/actions";
+import { markAllRead, moveThread, restoreThread, setRead, setStarred, setThreadLabels, snoozeThread } from "@/app/actions";
 import type { Attachment, Label, SortOrder, ThreadLocation } from "@/lib/mail/types";
 
 import Icon from "./icon";
-import { isTypingTarget, useMailUI, type ComposeDraft } from "./mail-ui";
+import { isTypingTarget, overlayOpen, useMailUI, type ComposeDraft } from "./mail-ui";
 import Menu from "./menu";
 
 export function StarButton({ id, starred, large }: { id: string; starred: boolean; large?: boolean }) {
@@ -110,9 +110,9 @@ export function ThreadToolbar({ id, location, unread, position, hrefs, labels, l
 
   const move = (to: "inbox" | "archive" | "trash", message: string) =>
     startTransition(async () => {
-      await moveThread(id, to);
+      const before = await moveThread(id, to);
       router.push(hrefs.afterRemove);
-      showToast({ message, undo: () => moveThread(id, location === "drafts" ? "inbox" : location) });
+      showToast({ message, undo: () => restoreThread(id, before) });
     });
 
   const archive = () =>
@@ -121,11 +121,14 @@ export function ThreadToolbar({ id, location, unread, position, hrefs, labels, l
       : move("archive", "Conversation archived");
   const trash = () => location !== "trash" && move("trash", "Moved to trash");
 
-  const snooze = (until: Date, label: string) =>
+  const snooze = (label: string) =>
     startTransition(async () => {
-      await snoozeThread(id, until.toISOString());
+      // Resolve the time at click, not render, so a long-open thread never snoozes into the past.
+      const option = snoozeOptions().find((candidate) => candidate.label === label);
+      if (!option) return;
+      const before = await snoozeThread(id, option.until.toISOString());
       router.push(hrefs.afterRemove);
-      showToast({ message: `Snoozed until ${label.toLowerCase()}`, undo: () => moveThread(id, "inbox") });
+      showToast({ message: `Snoozed until ${label.toLowerCase()}`, undo: () => restoreThread(id, before) });
     });
 
   const toggleRead = () =>
@@ -159,7 +162,7 @@ export function ThreadToolbar({ id, location, unread, position, hrefs, labels, l
   };
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (isTypingTarget(event.target) || event.metaKey || event.ctrlKey || event.altKey) return;
+      if (isTypingTarget(event.target) || event.metaKey || event.ctrlKey || event.altKey || overlayOpen()) return;
       const handler = handlers.current[event.key];
       if (!handler) return;
       event.preventDefault();
@@ -192,7 +195,7 @@ export function ThreadToolbar({ id, location, unread, position, hrefs, labels, l
                 ...snoozeOptions().map((option) => ({
                   label: option.label,
                   hint: option.detail,
-                  onSelect: () => snooze(option.until, option.label),
+                  onSelect: () => snooze(option.label),
                 })),
               ]}
             />

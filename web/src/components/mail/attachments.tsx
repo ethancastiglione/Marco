@@ -19,9 +19,9 @@ function kindOf(file: File): NewAttachment["kind"] {
 }
 
 /** File picking for compose and reply. Only metadata is kept: this demo never uploads files. */
-export function useAttachments() {
+export function useAttachments(initial: NewAttachment[] = []) {
   const input = useRef<HTMLInputElement>(null);
-  const [files, setFiles] = useState<NewAttachment[]>([]);
+  const [files, setFiles] = useState<NewAttachment[]>(initial);
 
   const picker = (
     <input
@@ -43,6 +43,7 @@ export function useAttachments() {
     pick: () => input.current?.click(),
     remove: (index: number) => setFiles((current) => current.filter((_, i) => i !== index)),
     clear: () => setFiles([]),
+    set: setFiles,
   };
 }
 

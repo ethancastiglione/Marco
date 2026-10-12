@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useState, useTransition } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 
 import { discardDraft, draftMessageWithAI, saveDraft, sendMessage, undoSend } from "@/app/actions";
 import { htmlToText, textToHtml } from "@/lib/mail/format";
@@ -11,7 +12,11 @@ import { useMailUI, type ComposeDraft } from "./mail-ui";
 import RichEditor from "./rich-editor";
 
 export default function ComposeWindow({ initial }: { initial: ComposeDraft }) {
-  const { closeCompose, openCompose, showToast } = useMailUI();
+  const { closeCompose, openCompose, showToast, composeSaver } = useMailUI();
+  const router = useRouter();
+  const pathname = usePathname();
+  // Guards against double ⌘↵ / Esc while an action is in flight (transition state lags a render).
+  const busy = useRef(false);
   const [draft, setDraft] = useState(initial);
   const [minimized, setMinimized] = useState(false);
   const [showCc, setShowCc] = useState(false);
@@ -22,7 +27,7 @@ export default function ComposeWindow({ initial }: { initial: ComposeDraft }) {
   // Bumped to remount the editor when its content is replaced (e.g. by an AI draft).
   const [editorKey, setEditorKey] = useState(0);
   const [linkRequest, setLinkRequest] = useState(0);
-  const attachments = useAttachments();
+  const attachments = useAttachments(initial.attachments);
 
   const onBodyChange = useCallback((html: string, text: string) => {
     setDraft((current) => ({ ...current, body: html }));
@@ -36,37 +41,72 @@ export default function ComposeWindow({ initial }: { initial: ComposeDraft }) {
   const isEmpty = !recipients && !draft.subject.trim() && !bodyText.trim();
   const message = { to: recipients, subject: draft.subject, body: draft.body, draftId: draft.draftId, attachments: attachments.files };
 
+  // Let the provider save this window as a draft if another compose replaces it.
+  const latest = useRef({ message, isEmpty });
+  latest.current = { message, isEmpty };
+  useEffect(() => {
+    const save = async () => {
+      if (busy.current || latest.current.isEmpty) return;
+      busy.current = true;
+      await saveDraft(latest.current.message);
+      showToast({ message: "Draft saved" });
+    };
+    composeSaver.current = save;
+    return () => {
+      if (composeSaver.current === save) composeSaver.current = null;
+    };
+  }, [composeSaver, showToast]);
+
+  /** Run one compose action at a time, then close the window. */
+  const finish = (action: () => Promise<void>) => {
+    if (busy.current) return;
+    busy.current = true;
+    startTransition(async () => {
+      await action();
+      composeSaver.current = null;
+      closeCompose();
+    });
+  };
+
+  // If the open page is this draft, leave it once the draft is sent or deleted (it would 404).
+  const leaveDraftPage = () => {
+    if (draft.draftId && pathname.endsWith(`/${draft.draftId}`)) router.push("/drafts");
+  };
+
   const send = () => {
     if (!recipients) {
       document.getElementById("compose-to")?.focus();
       return;
     }
-    startTransition(async () => {
+    const sent = { ...draft, to: recipients, attachments: attachments.files };
+    finish(async () => {
       const id = await sendMessage(message);
-      closeCompose();
+      leaveDraftPage();
       showToast({
         message: "Message sent",
         undo: async () => {
           await undoSend(id);
-          openCompose({ ...draft, to: recipients, draftId: id });
+          openCompose({ ...sent, draftId: id });
         },
       });
     });
   };
 
   const close = () => {
-    if (isEmpty) return closeCompose();
-    startTransition(async () => {
+    if (isEmpty) {
+      composeSaver.current = null;
+      return closeCompose();
+    }
+    finish(async () => {
       await saveDraft(message);
-      closeCompose();
       showToast({ message: "Draft saved" });
     });
   };
 
   const discard = () => {
-    startTransition(async () => {
+    finish(async () => {
       if (draft.draftId) await discardDraft(draft.draftId);
-      closeCompose();
+      leaveDraftPage();
       if (!isEmpty) showToast({ message: "Draft discarded" });
     });
   };
@@ -86,8 +126,16 @@ export default function ComposeWindow({ initial }: { initial: ComposeDraft }) {
       role="dialog"
       aria-label="New message"
       onKeyDown={(event) => {
-        if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) send();
-        if (event.key === "Escape") close();
+        if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
+          event.preventDefault();
+          send();
+        }
+        if (event.key === "Escape") {
+          // Handled here; don't let it also close the AI panel or blur other surfaces.
+          event.stopPropagation();
+          event.nativeEvent.stopImmediatePropagation();
+          close();
+        }
       }}
     >
       <div className="compose-header">

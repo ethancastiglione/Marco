@@ -63,7 +63,7 @@ export default function Topbar({ accounts }: { accounts?: ReactNode }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { setSidebarOpen, openPanel } = useMailUI();
-  const onSearchPage = pathname.startsWith("/search");
+  const onSearchPage = pathname === "/search" || pathname.startsWith("/search/");
   const urlQuery = onSearchPage ? (searchParams.get("q") ?? "") : "";
 
   const [value, setValue] = useState(urlQuery);
@@ -217,7 +217,7 @@ export default function Topbar({ accounts }: { accounts?: ReactNode }) {
       }
       for (const person of suggestions?.people ?? []) {
         list.push({
-          key: `person-${person.email}`,
+          key: `person-${person.email || person.name}`,
           section: "People",
           render: (
             <>
@@ -314,8 +314,9 @@ export default function Topbar({ accounts }: { accounts?: ReactNode }) {
                 event.preventDefault();
                 options[activeIndex].run();
               } else if (event.key === "Escape") {
-                if (open) setOpen(false);
-                else if (onSearchPage) {
+                // First Escape closes the suggestions; the next clears the search and leaves it.
+                if (open) return setOpen(false);
+                if (onSearchPage) {
                   setValue("");
                   router.push("/inbox");
                 }

@@ -9,6 +9,7 @@ import type { AsterAnswer } from "@/lib/ai/assistant";
 import type { Account, Attachment } from "@/lib/mail/types";
 
 import Icon from "./icon";
+import { overlayOpen } from "./mail-ui";
 import Modal from "./modal";
 
 export type Panel =
@@ -355,10 +356,16 @@ function AsterPanel({ onClose }: { onClose: () => void }) {
   const [pending, startTransition] = useTransition();
   const input = useRef<HTMLTextAreaElement>(null);
   const scroller = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     input.current?.focus();
-    const onKeyDown = (event: KeyboardEvent) => event.key === "Escape" && onClose();
+    // Only close when Escape is meant for the panel: focus inside it, or nowhere in particular.
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape" || overlayOpen()) return;
+      const focus = document.activeElement;
+      if (focus === document.body || panelRef.current?.contains(focus)) onClose();
+    };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [onClose]);
@@ -379,7 +386,7 @@ function AsterPanel({ onClose }: { onClose: () => void }) {
   };
 
   return (
-    <aside className="ai-panel" aria-label="Ask Aster AI">
+    <aside className="ai-panel" aria-label="Ask Aster AI" ref={panelRef}>
       <header className="ai-header">
         <span className="storage-icon">
           <Icon name="sparkle" size={15} />

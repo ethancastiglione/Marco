@@ -36,6 +36,8 @@ export const OPERATORS = [
   { token: "account:", hint: "Only one connected inbox" },
 ] as const;
 
+const OPERATOR_KEYS = new Set(["from", "to", "subject", "has", "is", "label", "in", "account"]);
+
 /** Splits a query into tokens, keeping quoted phrases and `key:"quoted value"` together. */
 export function tokenize(query: string): string[] {
   return [...(query.match(/(\w+:)?"[^"]*"?|\S+/g) ?? [])];
@@ -47,6 +49,8 @@ export function parseQuery(query: string): ParsedQuery {
   const parsed: ParsedQuery = { terms: [], is: {} };
   for (const token of tokenize(query)) {
     const match = token.match(/^(\w+):(.*)$/);
+    // An operator still being typed ("from:") narrows nothing yet.
+    if (match && !unquote(match[2]) && OPERATOR_KEYS.has(match[1].toLowerCase())) continue;
     const key = match?.[1].toLowerCase();
     const value = match ? unquote(match[2]) : "";
     if (match && value) {

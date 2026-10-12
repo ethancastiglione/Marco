@@ -8,7 +8,14 @@ import { askAster as answer } from "@/lib/ai/assistant";
 import { ACCOUNTS_COOKIE, getAccountFilter } from "@/lib/mail/accounts";
 import { freeText, parseQuery, tokenize } from "@/lib/mail/search";
 import { mail } from "@/lib/mail/store";
-import type { NewAttachment, OutgoingMessage, SearchSuggestions } from "@/lib/mail/types";
+import type { NewAttachment, OutgoingMessage, SearchSuggestions, ThreadPlacement } from "@/lib/mail/types";
+
+/** New mail is sent from the first inbox the viewer can see, so it never lands somewhere hidden. */
+async function withSender(message: OutgoingMessage): Promise<OutgoingMessage> {
+  if (message.accountId) return message;
+  const { enabled } = await getAccountFilter();
+  return { ...message, accountId: enabled[0] };
+}
 
 export async function setStarred(id: string, starred: boolean) {
   await mail.setStarred(id, starred);
@@ -21,18 +28,27 @@ export async function setRead(id: string, read: boolean) {
 }
 
 export async function markAllRead(mailbox: string) {
-  await mail.markAllRead(mailbox);
+  const { enabled } = await getAccountFilter();
+  await mail.markAllRead(mailbox, enabled);
   refresh();
 }
 
+/** Returns where the thread was, for Undo. */
 export async function moveThread(id: string, location: "inbox" | "archive" | "trash") {
-  await mail.move(id, location);
+  const before = await mail.move(id, location);
+  refresh();
+  return before;
+}
+
+export async function restoreThread(id: string, placement: ThreadPlacement) {
+  await mail.restore(id, placement);
   refresh();
 }
 
 export async function snoozeThread(id: string, until: string) {
-  await mail.snooze(id, until);
+  const before = await mail.snooze(id, until);
   refresh();
+  return before;
 }
 
 export async function replyToThread(id: string, html: string, attachments?: NewAttachment[]) {
@@ -63,9 +79,12 @@ export async function searchSuggestions(query: string): Promise<SearchSuggestion
   const labels = await mail.listLabels();
   const lastToken = tokenize(query).at(-1) ?? "";
   const personTerm = /^(from|to):/i.test(lastToken) ? lastToken.replace(/^\w+:/, "") : freeText(query).split(" ").at(-1) ?? "";
-  const hasCriteria = parseQuery(query).terms.length > 0 || /\w+:\S/.test(query);
+  const parsed = parseQuery(query);
+  const hasCriteria = parsed.terms.length > 0 || /\w+:[^\s"]/.test(query);
   const [people, messages] = await Promise.all([
-    personTerm.length >= 1 || /^(from|to):$/i.test(lastToken) ? mail.searchPeople(personTerm, enabled) : Promise.resolve([]),
+    personTerm.length >= 1 || /^(from|to):$/i.test(lastToken)
+      ? mail.searchPeople(personTerm, enabled, /^to:/i.test(lastToken) ? "to" : "from")
+      : Promise.resolve([]),
     hasCriteria ? mail.search(query, enabled) : Promise.resolve([]),
   ]);
   return { people, messages: messages.slice(0, 5), labels, accounts };
@@ -82,13 +101,13 @@ export async function undoReply(id: string) {
 }
 
 export async function sendMessage(message: OutgoingMessage) {
-  const id = await mail.send(message);
+  const id = await mail.send(await withSender(message));
   refresh();
   return id;
 }
 
 export async function saveDraft(message: OutgoingMessage) {
-  const id = await mail.saveDraft(message);
+  const id = await mail.saveDraft(await withSender(message));
   refresh();
   return id;
 }

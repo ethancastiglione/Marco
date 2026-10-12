@@ -268,7 +268,20 @@ export default function RichEditor({ id, variant = "window", initialHtml, placeh
       />
 
       {link && (
-        <div className="link-dialog" role="dialog" aria-label="Edit link">
+        <div
+          className="link-dialog"
+          role="dialog"
+          aria-label="Edit link"
+          onKeyDown={(event) => {
+            // Keep Enter/Escape inside the dialog so they never send or close the message.
+            event.stopPropagation();
+            if (event.key === "Enter") {
+              event.preventDefault();
+              applyLink();
+            }
+            if (event.key === "Escape") setLink(null);
+          }}
+        >
           <strong>Edit link</strong>
           <label>
             <span>Text to display</span>
@@ -281,14 +294,6 @@ export default function RichEditor({ id, variant = "window", initialHtml, placeh
               placeholder="Web address or email"
               value={link.url}
               onChange={(event) => setLink({ ...link, url: event.target.value })}
-              onKeyDown={(event) => {
-                event.stopPropagation(); // Don't let Escape/⌘↵ reach the compose window.
-                if (event.key === "Enter") {
-                  event.preventDefault();
-                  applyLink();
-                }
-                if (event.key === "Escape") setLink(null);
-              }}
             />
           </label>
           <div className="link-dialog-footer">
