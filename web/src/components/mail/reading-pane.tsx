@@ -1,7 +1,7 @@
 import { Fragment } from "react";
 
 import { firstName, formatMessageTime, initials } from "@/lib/mail/format";
-import type { BodyBlock, Label, Message, Thread } from "@/lib/mail/types";
+import type { Account, BodyBlock, Label, Message, Thread } from "@/lib/mail/types";
 
 import { me } from "@/lib/mail/seed";
 
@@ -12,6 +12,7 @@ import { ContinueDraftButton, MarkReadOnOpen, RecipientsToggle, StarButton, Thre
 type Props = {
   thread: Thread;
   label?: Label;
+  account?: Account;
   /** True when the user opened this thread, rather than it being shown by default. */
   opened: boolean;
   position: { index: number; total: number };
@@ -104,7 +105,7 @@ function SentMessage({ message }: { message: Message }) {
   );
 }
 
-export default function ReadingPane({ thread, label, opened, position, hrefs }: Props) {
+export default function ReadingPane({ thread, label, account, opened, position, hrefs }: Props) {
   const isDraft = thread.location === "drafts";
   const lead = thread.participants[0];
 
@@ -122,7 +123,15 @@ export default function ReadingPane({ thread, label, opened, position, hrefs }: 
       <article className="email-content">
         <div className="email-title-row">
           <div>
-            <div className="email-label">{isDraft ? "Draft" : (label?.name ?? "Inbox")}</div>
+            <div className="email-tags">
+              <div className="email-label">{isDraft ? "Draft" : (label?.name ?? "Inbox")}</div>
+              {account && (
+                <div className="email-account">
+                  <span className={`account-dot account-${account.color}`} />
+                  {account.email}
+                </div>
+              )}
+            </div>
             <h2>{thread.subject || "(no subject)"}</h2>
           </div>
           {!isDraft && <StarButton id={thread.id} starred={thread.starred} large />}

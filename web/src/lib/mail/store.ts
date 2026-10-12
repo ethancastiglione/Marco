@@ -3,9 +3,10 @@ import "server-only";
 import { connection } from "next/server";
 
 import { bodyToText, initials, senderLabel, textToBody } from "./format";
-import { me, seedLabels, seedThreads } from "./seed";
+import { me, seedAccounts, seedLabels, seedThreads } from "./seed";
 import {
   SYSTEM_MAILBOXES,
+  type Account,
   type Label,
   type LabelColor,
   type ListQuery,
@@ -22,8 +23,9 @@ import {
  * backs the demo; a Gmail/IMAP adapter implements the same interface.
  */
 export interface MailStore {
+  listAccounts(): Promise<Account[]>;
   listLabels(): Promise<Label[]>;
-  counts(): Promise<MailboxCounts>;
+  counts(accounts?: string[]): Promise<MailboxCounts>;
   listThreads(query: ListQuery): Promise<ThreadSummary[]>;
   getThread(id: string): Promise<Thread | undefined>;
 
@@ -61,6 +63,10 @@ function lastMessage(thread: Thread) {
 
 function isSnoozed(thread: Thread, now: number) {
   return thread.snoozedUntil !== undefined && new Date(thread.snoozedUntil).getTime() > now;
+}
+
+function inAccounts(thread: Thread, accounts?: string[]) {
+  return !accounts || accounts.includes(thread.accountId);
 }
 
 function inMailbox(thread: Thread, mailbox: string, now: number) {
@@ -101,6 +107,7 @@ function parseRecipients(to: string, known: Person[]): Person[] {
 class InMemoryMailStore implements MailStore {
   private threads: Thread[] = seedThreads();
   private labels: Label[] = [...seedLabels];
+  private accounts: Account[] = [...seedAccounts];
   private nextId = 1;
 
   private find(id: string) {
@@ -119,6 +126,7 @@ class InMemoryMailStore implements MailStore {
     const isDraft = thread.location === "drafts";
     return {
       id: thread.id,
+      account: this.accounts.find((account) => account.id === thread.accountId),
       sender: isDraft ? `To ${senderLabel(thread.participants)}` : senderLabel(thread.participants),
       initials: lead ? initials(lead.name) : "D",
       avatar: lead?.avatar ?? "light",
@@ -133,16 +141,24 @@ class InMemoryMailStore implements MailStore {
     };
   }
 
+  async listAccounts() {
+    await connection();
+    return this.accounts;
+  }
+
   async listLabels() {
     await connection();
     return this.labels;
   }
 
-  async counts() {
+  async counts(accounts?: string[]) {
     await connection();
     const now = Date.now();
     const count = (mailbox: SystemMailbox, unreadOnly = false) =>
-      this.threads.filter((thread) => inMailbox(thread, mailbox, now) && (!unreadOnly || thread.unread)).length;
+      this.threads.filter(
+        (thread) =>
+          inAccounts(thread, accounts) && inMailbox(thread, mailbox, now) && (!unreadOnly || thread.unread),
+      ).length;
     return {
       inbox: count("inbox", true),
       starred: 0,
@@ -154,12 +170,12 @@ class InMemoryMailStore implements MailStore {
     };
   }
 
-  async listThreads({ mailbox, q, unreadOnly }: ListQuery) {
+  async listThreads({ mailbox, q, unreadOnly, accounts }: ListQuery) {
     await connection();
     const now = Date.now();
     const needle = q?.trim().toLowerCase();
     return this.threads
-      .filter((thread) => inMailbox(thread, mailbox, now))
+      .filter((thread) => inAccounts(thread, accounts) && inMailbox(thread, mailbox, now))
       .filter((thread) => !unreadOnly || thread.unread)
       .map((thread) => this.summarize(thread))
       .filter(
@@ -242,6 +258,7 @@ class InMemoryMailStore implements MailStore {
     const id = `m${Date.now().toString(36)}${this.nextId++}`;
     this.threads.push({
       id,
+      accountId: this.accounts[0].id,
       subject: message.subject,
       participants: recipients,
       labelIds: [],

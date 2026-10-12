@@ -1,6 +1,12 @@
-import type { Label, Person, Thread } from "./types";
+import type { Account, Label, Person, Thread } from "./types";
 
 export const me: Person = { name: "Noah Smith", email: "noah@aster.ai", avatar: "light" };
+
+export const seedAccounts: Account[] = [
+  { id: "work", name: "Aster Labs", email: "noah@aster.ai", initial: "A", color: "ink" },
+  { id: "personal", name: "Personal", email: "noah.smith@gmail.com", initial: "N", color: "red" },
+  { id: "studio", name: "Smith Studio", email: "hello@smith.studio", initial: "S", color: "blue" },
+];
 
 export const workspace = { name: "Aster Labs", kind: "Team workspace" };
 
@@ -15,6 +21,9 @@ const people = {
   notion: { name: "Notion", email: "notify@mail.notion.so", avatar: "light" },
   alex: { name: "Alex Morgan", email: "alex@aster.ai", avatar: "green" },
   figma: { name: "Figma", email: "comments@figma.com", avatar: "pink" },
+  ruth: { name: "Ruth Alvarez", email: "ruth@fernandcoast.com", avatar: "violet" },
+  mom: { name: "Mom", email: "linda.smith@gmail.com", avatar: "coral" },
+  travel: { name: "Wanderly Travel", email: "trips@wanderly.com", avatar: "blue" },
   sam: { name: "Sam Rivera", email: "sam.rivera@gmail.com", avatar: "amber" },
 } satisfies Record<string, Person>;
 
@@ -32,6 +41,7 @@ export function seedThreads(now = new Date()): Thread[] {
   return [
     {
       id: "q3-strategy",
+      accountId: "work",
       subject: "Q3 Product strategy — final review",
       participants: [people.maya],
       labelIds: ["product"],
@@ -74,6 +84,7 @@ export function seedThreads(now = new Date()): Thread[] {
     },
     {
       id: "linear-digest",
+      accountId: "work",
       subject: "Your workspace digest",
       participants: [people.linear],
       labelIds: [],
@@ -105,6 +116,7 @@ export function seedThreads(now = new Date()): Thread[] {
     },
     {
       id: "brand-exploration",
+      accountId: "studio",
       subject: "Re: Brand exploration",
       participants: [people.jon],
       labelIds: ["design"],
@@ -145,6 +157,7 @@ export function seedThreads(now = new Date()): Thread[] {
     },
     {
       id: "offsite-planning",
+      accountId: "work",
       subject: "Offsite planning",
       participants: [people.priya, people.dana, people.leo, people.ines],
       labelIds: [],
@@ -179,6 +192,7 @@ export function seedThreads(now = new Date()): Thread[] {
     },
     {
       id: "notion-mention",
+      accountId: "work",
       subject: "Maya mentioned you",
       participants: [people.notion],
       labelIds: [],
@@ -202,6 +216,7 @@ export function seedThreads(now = new Date()): Thread[] {
     },
     {
       id: "research-notes",
+      accountId: "work",
       subject: "Customer research notes",
       participants: [people.alex],
       labelIds: ["research"],
@@ -236,6 +251,7 @@ export function seedThreads(now = new Date()): Thread[] {
     },
     {
       id: "figma-comments",
+      accountId: "work",
       subject: "5 new comments in Workspace",
       participants: [people.figma],
       labelIds: [],
@@ -265,6 +281,7 @@ export function seedThreads(now = new Date()): Thread[] {
     },
     {
       id: "coffee",
+      accountId: "personal",
       subject: "Coffee next week?",
       participants: [people.sam],
       labelIds: [],
@@ -292,6 +309,7 @@ export function seedThreads(now = new Date()): Thread[] {
     },
     {
       id: "hiring-plan",
+      accountId: "work",
       subject: "Hiring plan for H2",
       participants: [people.dana],
       labelIds: [],
@@ -312,6 +330,7 @@ export function seedThreads(now = new Date()): Thread[] {
     },
     {
       id: "draft-leo",
+      accountId: "work",
       subject: "Calendar sync scope",
       participants: [people.leo],
       labelIds: [],
@@ -332,6 +351,7 @@ export function seedThreads(now = new Date()): Thread[] {
     },
     {
       id: "draft-team",
+      accountId: "work",
       subject: "Thursday review agenda",
       participants: [people.maya, people.priya],
       labelIds: ["product"],
@@ -347,6 +367,88 @@ export function seedThreads(now = new Date()): Thread[] {
           fromMe: true,
           body: [{ type: "p", text: "Proposed agenda: 1) strategy doc walkthrough 2) metrics 3) open questions" }],
           attachments: [],
+        },
+      ],
+    },
+    {
+      id: "studio-inquiry",
+      accountId: "studio",
+      subject: "New inquiry: brand refresh for Fern & Coast",
+      participants: [people.ruth],
+      labelIds: ["design"],
+      location: "inbox",
+      unread: true,
+      starred: false,
+      messages: [
+        {
+          id: "studio-inquiry-1",
+          from: people.ruth,
+          to: [me],
+          sentAt: ago(55),
+          fromMe: false,
+          body: [
+            { type: "p", text: "Hi Noah," },
+            {
+              type: "p",
+              text: "We're a small coastal hotel group looking to refresh our identity before spring. A friend pointed us to your studio. Would you have room for a project starting in November?",
+            },
+            { type: "p", text: "Best,\nRuth" },
+          ],
+          attachments: [{ id: "fern-brief", name: "Fern_Coast_Brief.pdf", kind: "pdf", size: "2.1 MB", detail: "6 pages" }],
+        },
+      ],
+    },
+    {
+      id: "mom-dinner",
+      accountId: "personal",
+      subject: "Dinner Sunday?",
+      participants: [people.mom],
+      labelIds: [],
+      location: "inbox",
+      unread: true,
+      starred: false,
+      messages: [
+        {
+          id: "mom-dinner-1",
+          from: people.mom,
+          to: [me],
+          sentAt: ago(140),
+          fromMe: false,
+          body: [
+            { type: "p", text: "Hi sweetie," },
+            { type: "p", text: "Dad's making his lasagna on Sunday. Come by around 6? Bring that friend from work if you like.\n\nLove, Mom" },
+          ],
+          attachments: [],
+        },
+      ],
+    },
+    {
+      id: "flight-confirmation",
+      accountId: "personal",
+      subject: "Your trip to New York is confirmed",
+      participants: [people.travel],
+      labelIds: [],
+      location: "inbox",
+      unread: false,
+      starred: false,
+      messages: [
+        {
+          id: "flight-confirmation-1",
+          from: people.travel,
+          to: [me],
+          sentAt: ago(2 * day + 60),
+          fromMe: false,
+          body: [
+            { type: "p", text: "Confirmation WX4K9P — SFO → JFK, Oct 17, departing 8:05 AM." },
+            {
+              type: "ol",
+              items: [
+                { title: "Seat", text: "14A · window" },
+                { title: "Hotel", text: "The Wythe, 3 nights · check-in Oct 17" },
+              ],
+            },
+          ],
+          attachments: [{ id: "itinerary", name: "Itinerary_WX4K9P.pdf", kind: "pdf", size: "310 KB", detail: "2 pages" }],
         },
       ],
     },

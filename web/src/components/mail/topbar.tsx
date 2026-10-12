@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 
 import Icon from "./icon";
 import { useMailUI } from "./mail-ui";
@@ -18,7 +18,7 @@ export function TopbarFallback() {
   );
 }
 
-export default function Topbar() {
+export default function Topbar({ accounts }: { accounts?: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -66,6 +66,7 @@ export default function Topbar() {
         />
         <kbd>⌘ K</kbd>
       </label>
+      {accounts}
       <button className="help-button" aria-label="Keyboard shortcuts" popoverTarget="shortcuts-help">
         ?
       </button>

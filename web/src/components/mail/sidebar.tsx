@@ -1,3 +1,4 @@
+import { getAccountFilter } from "@/lib/mail/accounts";
 import { mail, me } from "@/lib/mail/store";
 import { workspace } from "@/lib/mail/seed";
 import { initials } from "@/lib/mail/format";
@@ -16,7 +17,8 @@ const navItems = [
 ] as const;
 
 export default async function Sidebar() {
-  const [counts, labels] = await Promise.all([mail.counts(), mail.listLabels()]);
+  const { enabled } = await getAccountFilter();
+  const [counts, labels] = await Promise.all([mail.counts(enabled), mail.listLabels()]);
 
   return (
     <SidebarFrame>

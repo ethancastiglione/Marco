@@ -28,6 +28,17 @@ export type Person = {
   avatar: AvatarTone;
 };
 
+export type AccountColor = "ink" | "red" | "blue" | "green" | "amber";
+
+/** A connected mailbox (work, personal, ...). Threads belong to exactly one. */
+export type Account = {
+  id: string;
+  name: string;
+  email: string;
+  initial: string;
+  color: AccountColor;
+};
+
 export type Label = {
   /** URL slug, also used as the mailbox route segment. */
   id: string;
@@ -62,6 +73,7 @@ export type ThreadLocation = "inbox" | "archive" | "trash" | "drafts";
 
 export type Thread = {
   id: string;
+  accountId: string;
   subject: string;
   /** Everyone on the thread except the account owner. */
   participants: Person[];
@@ -75,6 +87,7 @@ export type Thread = {
 
 export type ThreadSummary = {
   id: string;
+  account?: Account;
   sender: string;
   initials: string;
   avatar: AvatarTone;
@@ -94,6 +107,8 @@ export type ListQuery = {
   mailbox: string;
   q?: string;
   unreadOnly?: boolean;
+  /** Only include threads from these accounts. Omit for all. */
+  accounts?: string[];
 };
 
 export type OutgoingMessage = {

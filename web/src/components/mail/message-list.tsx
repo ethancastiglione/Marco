@@ -13,10 +13,24 @@ type Props = {
   selectedId?: string;
   unreadOnly: boolean;
   query?: string;
+  /** Which inboxes are shown, e.g. "All inboxes". */
+  scope: string;
+  /** Mark each card with its account when several inboxes are mixed together. */
+  showAccounts: boolean;
   hrefFor: (id: string) => string;
 };
 
-export default function MessageList({ mailbox, title, threads, selectedId, unreadOnly, query, hrefFor }: Props) {
+export default function MessageList({
+  mailbox,
+  title,
+  threads,
+  selectedId,
+  unreadOnly,
+  query,
+  scope,
+  showAccounts,
+  hrefFor,
+}: Props) {
   const filterHref = (unread: boolean) => {
     const params = new URLSearchParams();
     if (query) params.set("q", query);
@@ -29,7 +43,7 @@ export default function MessageList({ mailbox, title, threads, selectedId, unrea
     <section className="message-list">
       <div className="list-heading">
         <div>
-          <span className="section-kicker">{query ? `Results for “${query}”` : "Mailbox"}</span>
+          <span className="section-kicker">{query ? `Results for “${query}”` : scope}</span>
           <h1>{title}</h1>
         </div>
         <div className="heading-actions">
@@ -64,7 +78,15 @@ export default function MessageList({ mailbox, title, threads, selectedId, unrea
                 aria-label={`${thread.sender}: ${thread.subject}`}
                 aria-current={selectedId === thread.id ? "true" : undefined}
               />
-              <div className={`sender-avatar avatar-${thread.avatar}`}>{thread.initials}</div>
+              <div className={`sender-avatar avatar-${thread.avatar}`}>
+                {thread.initials}
+                {showAccounts && thread.account && (
+                  <span
+                    className={`account-pip account-${thread.account.color}`}
+                    title={thread.account.email}
+                  />
+                )}
+              </div>
               <div className="message-main">
                 <div className="message-meta">
                   <strong className={thread.isDraft ? "draft-sender" : undefined}>{thread.sender}</strong>

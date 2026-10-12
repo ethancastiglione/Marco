@@ -3,6 +3,7 @@ import { Suspense } from "react";
 
 import MessageList from "@/components/mail/message-list";
 import ReadingPane, { EmptyReadingPane } from "@/components/mail/reading-pane";
+import { getAccountFilter } from "@/lib/mail/accounts";
 import { isSystemMailbox, mail } from "@/lib/mail/store";
 
 const TITLES: Record<string, string> = {
@@ -33,7 +34,15 @@ async function MailView({ params, searchParams }: PageProps<"/[mailbox]/[[...thr
 
   const q = typeof search.q === "string" ? search.q : undefined;
   const unreadOnly = search.filter === "unread";
-  const threads = await mail.listThreads({ mailbox, q, unreadOnly });
+  const { accounts, enabled } = await getAccountFilter();
+  const threads = await mail.listThreads({ mailbox, q, unreadOnly, accounts: enabled });
+  const scope =
+    enabled.length === accounts.length
+      ? "All inboxes"
+      : accounts
+          .filter((account) => enabled.includes(account.id))
+          .map((account) => account.name)
+          .join(" + ");
 
   const openedId = threadSegments?.[0];
   const selectedId = openedId ?? threads[0]?.id;
@@ -62,6 +71,8 @@ async function MailView({ params, searchParams }: PageProps<"/[mailbox]/[[...thr
         selectedId={selectedId}
         unreadOnly={unreadOnly}
         query={q}
+        scope={scope}
+        showAccounts={enabled.length > 1}
         hrefFor={hrefFor}
       />
       {thread ? (
@@ -69,6 +80,7 @@ async function MailView({ params, searchParams }: PageProps<"/[mailbox]/[[...thr
           key={thread.id}
           thread={thread}
           label={labels.find((candidate) => thread.labelIds.includes(candidate.id))}
+          account={accounts.find((account) => account.id === thread.accountId)}
           opened={Boolean(openedId)}
           position={{ index, total: threads.length }}
           hrefs={{
