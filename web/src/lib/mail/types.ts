@@ -1,3 +1,5 @@
+import type { Segment } from "./search";
+
 export const SYSTEM_MAILBOXES = [
   "inbox",
   "starred",
@@ -115,6 +117,27 @@ export type ListQuery = {
   unreadOnly?: boolean;
   /** Only include threads from these accounts. Omit for all. */
   accounts?: string[];
+  sort?: SortOrder;
+};
+
+export type SortOrder = "newest" | "oldest" | "unread";
+
+export type NewAttachment = { name: string; size: string; kind: Attachment["kind"] };
+
+export type SearchHit = ThreadSummary & {
+  /** Where the thread lives, e.g. "Inbox" or "Archive". */
+  where: string;
+  score: number;
+  highlights: { sender: Segment[]; subject: Segment[]; snippet: Segment[] };
+};
+
+export type SearchPerson = Person & { initials: string; threads: number };
+
+export type SearchSuggestions = {
+  people: SearchPerson[];
+  messages: SearchHit[];
+  labels: Label[];
+  accounts: Account[];
 };
 
 export type OutgoingMessage = {
@@ -124,4 +147,5 @@ export type OutgoingMessage = {
   body: string;
   /** When sending an existing draft, the draft's thread id. */
   draftId?: string;
+  attachments?: NewAttachment[];
 };

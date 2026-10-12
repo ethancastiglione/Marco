@@ -128,6 +128,9 @@ function FmtDropdown({
 }
 
 type Props = {
+  id?: string;
+  /** "inline" is the compact reply box; the default fills the compose window. */
+  variant?: "window" | "inline";
   initialHtml: string;
   placeholder: string;
   showToolbar: boolean;
@@ -137,7 +140,7 @@ type Props = {
   linkRequest?: number;
 };
 
-export default function RichEditor({ initialHtml, placeholder, showToolbar, autoFocus, onChange, linkRequest }: Props) {
+export default function RichEditor({ id, variant = "window", initialHtml, placeholder, showToolbar, autoFocus, onChange, linkRequest }: Props) {
   const editor = useRef<HTMLDivElement>(null);
   const savedRange = useRef<Range | null>(null);
   const [menu, setMenu] = useState<Menu>(null);
@@ -242,9 +245,10 @@ export default function RichEditor({ initialHtml, placeholder, showToolbar, auto
   const ctx: ToolbarContext = { active, menu, setMenu, saveSelection, exec };
 
   return (
-    <div className="rich-editor">
+    <div className={`rich-editor rich-editor-${variant}`}>
       <div
         ref={editor}
+        id={id}
         className="compose-editor"
         contentEditable
         suppressContentEditableWarning

@@ -6,6 +6,7 @@ import { useOptimistic, useTransition } from "react";
 import type { Account } from "@/lib/mail/types";
 
 import Icon from "./icon";
+import { useMailUI } from "./mail-ui";
 
 const COOKIE = "aster-accounts";
 
@@ -13,6 +14,7 @@ export default function AccountSwitcher({ accounts, enabled }: { accounts: Accou
   const router = useRouter();
   const [optimistic, setOptimistic] = useOptimistic(enabled);
   const [, startTransition] = useTransition();
+  const { openPanel } = useMailUI();
 
   const toggle = (id: string) => {
     const next = optimistic.includes(id) ? optimistic.filter((value) => value !== id) : [...optimistic, id];
@@ -44,7 +46,7 @@ export default function AccountSwitcher({ accounts, enabled }: { accounts: Accou
           </button>
         );
       })}
-      <button className="account-add" aria-label="Add account" data-tooltip="Add account">
+      <button className="account-add" aria-label="Add account" data-tooltip="Add account" onClick={() => openPanel({ type: "add-account" })}>
         +
       </button>
     </div>

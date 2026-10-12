@@ -44,7 +44,9 @@ export type IconName =
   | "format"
   | "mailOpen"
   | "eye"
-  | "checkDouble";
+  | "checkDouble"
+  | "print"
+  | "filter";
 
 const paths: Record<IconName, ReactNode> = {
   archive: (
@@ -164,6 +166,13 @@ const paths: Record<IconName, ReactNode> = {
       <circle cx="12" cy="12" r="2.8" />
     </>
   ),
+  print: (
+    <>
+      <path d="M7 8V3.5h10V8M7 17H4.5V9.5a1.5 1.5 0 0 1 1.5-1.5h12a1.5 1.5 0 0 1 1.5 1.5V17H17" />
+      <path d="M7 13.5h10v7H7z" />
+    </>
+  ),
+  filter: <path d="M4 6h16M7 12h10M10 18h4" />,
   checkDouble: <path d="m2.5 12.5 4 4L15 8M10.5 16.5 19 8" />,
   users: (
     <>

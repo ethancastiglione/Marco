@@ -4,11 +4,12 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useOptimistic, useRef, useState, useTransition } from "react";
 
-import { markAllRead, moveThread, setRead, setStarred, snoozeThread } from "@/app/actions";
-import type { ThreadLocation } from "@/lib/mail/types";
+import { markAllRead, moveThread, setRead, setStarred, setThreadLabels, snoozeThread } from "@/app/actions";
+import type { Attachment, Label, SortOrder, ThreadLocation } from "@/lib/mail/types";
 
 import Icon from "./icon";
 import { isTypingTarget, useMailUI, type ComposeDraft } from "./mail-ui";
+import Menu from "./menu";
 
 export function StarButton({ id, starred, large }: { id: string; starred: boolean; large?: boolean }) {
   const [optimistic, setOptimistic] = useOptimistic(starred);
@@ -96,13 +97,16 @@ type ToolbarProps = {
   unread: boolean;
   position: { index: number; total: number };
   hrefs: { list: string; prev?: string; next?: string; afterRemove: string };
+  labels: Label[];
+  labelIds: string[];
+  forward: ComposeDraft;
 };
 
-export function ThreadToolbar({ id, location, unread, position, hrefs }: ToolbarProps) {
+export function ThreadToolbar({ id, location, unread, position, hrefs, labels, labelIds, forward }: ToolbarProps) {
   const router = useRouter();
-  const { showToast } = useMailUI();
+  const { showToast, openCompose } = useMailUI();
   const [pending, startTransition] = useTransition();
-  const [snoozeOpen, setSnoozeOpen] = useState(false);
+  const [optimisticLabels, setOptimisticLabels] = useOptimistic(labelIds);
 
   const move = (to: "inbox" | "archive" | "trash", message: string) =>
     startTransition(async () => {
@@ -119,11 +123,27 @@ export function ThreadToolbar({ id, location, unread, position, hrefs }: Toolbar
 
   const snooze = (until: Date, label: string) =>
     startTransition(async () => {
-      setSnoozeOpen(false);
       await snoozeThread(id, until.toISOString());
       router.push(hrefs.afterRemove);
       showToast({ message: `Snoozed until ${label.toLowerCase()}`, undo: () => moveThread(id, "inbox") });
     });
+
+  const toggleRead = () =>
+    startTransition(async () => {
+      // Leave the thread before marking it unread, or opening it would mark it read again.
+      if (!unread) router.push(hrefs.list);
+      await setRead(id, unread);
+    });
+
+  const toggleLabel = (labelId: string) => {
+    const next = optimisticLabels.includes(labelId)
+      ? optimisticLabels.filter((value) => value !== labelId)
+      : [...optimisticLabels, labelId];
+    startTransition(async () => {
+      setOptimisticLabels(next);
+      await setThreadLabels(id, next);
+    });
+  };
 
   // Keyboard shortcuts for the open thread. Re-bound each render so they see current props.
   const handlers = useRef<Record<string, () => void>>({});
@@ -132,10 +152,9 @@ export function ThreadToolbar({ id, location, unread, position, hrefs }: Toolbar
     k: () => hrefs.prev && router.push(hrefs.prev),
     e: () => location !== "drafts" && archive(),
     "#": () => location !== "drafts" && trash(),
-    s: () =>
-      location !== "drafts" &&
-      (document.querySelector<HTMLButtonElement>(".large-star")?.click()),
-    r: () => document.getElementById("reply-input")?.focus(),
+    s: () => location !== "drafts" && document.querySelector<HTMLButtonElement>(".large-star")?.click(),
+    r: () => document.querySelector<HTMLElement>("#reply-input")?.focus(),
+    f: () => location !== "drafts" && openCompose(forward),
     u: () => router.push(hrefs.list),
   };
   useEffect(() => {
@@ -161,54 +180,32 @@ export function ThreadToolbar({ id, location, unread, position, hrefs }: Toolbar
         </Link>
         {!isDraft && (
           <>
-            <button
-              className="icon-button"
-              title={restoring ? "Move to inbox" : "Archive (E)"}
-              onClick={archive}
-              disabled={pending}
-            >
+            <button className="icon-button" data-tooltip={restoring ? "Move to inbox" : "Archive · E"} aria-label={restoring ? "Move to inbox" : "Archive"} onClick={archive} disabled={pending}>
               <Icon name={restoring ? "inbox" : "archive"} size={17} />
             </button>
-            <div className="menu-anchor">
-              <button
-                className="icon-button"
-                title="Snooze"
-                aria-expanded={snoozeOpen}
-                onClick={() => setSnoozeOpen((value) => !value)}
-                disabled={pending}
-              >
-                <Icon name="clock" size={17} />
-              </button>
-              {snoozeOpen && (
-                <>
-                  <div className="menu-dismiss" onClick={() => setSnoozeOpen(false)} />
-                  <div className="menu" role="menu">
-                    <span className="menu-title">Snooze until…</span>
-                    {snoozeOptions().map((option) => (
-                      <button role="menuitem" key={option.label} onClick={() => snooze(option.until, option.label)}>
-                        <span>{option.label}</span>
-                        <small>{option.detail}</small>
-                      </button>
-                    ))}
-                  </div>
-                </>
-              )}
-            </div>
+            <Menu
+              label="Snooze"
+              icon="clock"
+              disabled={pending}
+              items={[
+                { type: "heading", label: "Snooze until…" },
+                ...snoozeOptions().map((option) => ({
+                  label: option.label,
+                  hint: option.detail,
+                  onSelect: () => snooze(option.until, option.label),
+                })),
+              ]}
+            />
             {location !== "trash" && (
-              <button className="icon-button" title="Delete (#)" onClick={trash} disabled={pending}>
+              <button className="icon-button" data-tooltip="Delete · #" aria-label="Delete" onClick={trash} disabled={pending}>
                 <Icon name="trash" size={17} />
               </button>
             )}
             <button
               className="icon-button"
-              title={unread ? "Mark as read" : "Mark as unread"}
-              onClick={() =>
-                startTransition(async () => {
-                  // Leave the thread before marking it unread, or opening it would mark it read again.
-                  if (!unread) router.push(hrefs.list);
-                  await setRead(id, unread);
-                })
-              }
+              data-tooltip={unread ? "Mark as read" : "Mark as unread"}
+              aria-label={unread ? "Mark as read" : "Mark as unread"}
+              onClick={toggleRead}
               disabled={pending}
             >
               <Icon name={unread ? "mailOpen" : "mail"} size={17} />
@@ -222,27 +219,118 @@ export function ThreadToolbar({ id, location, unread, position, hrefs }: Toolbar
           {position.index >= 0 ? `${position.index + 1} of ${position.total}` : `${position.total} in view`}
         </span>
         {hrefs.prev ? (
-          <Link className="icon-button" aria-label="Previous message (K)" href={hrefs.prev}>
+          <Link className="icon-button" aria-label="Previous" data-tooltip="Previous · K" href={hrefs.prev}>
             <Icon name="arrowLeft" size={16} />
           </Link>
         ) : (
-          <button className="icon-button" aria-label="Previous message" disabled>
+          <button className="icon-button" aria-label="Previous" disabled>
             <Icon name="arrowLeft" size={16} />
           </button>
         )}
         {hrefs.next ? (
-          <Link className="icon-button" aria-label="Next message (J)" href={hrefs.next}>
+          <Link className="icon-button" aria-label="Next" data-tooltip="Next · J" href={hrefs.next}>
             <Icon name="arrowRight" size={16} />
           </Link>
         ) : (
-          <button className="icon-button" aria-label="Next message" disabled>
+          <button className="icon-button" aria-label="Next" disabled>
             <Icon name="arrowRight" size={16} />
           </button>
         )}
-        <button className="icon-button" aria-label="More options">
-          <Icon name="dots" size={19} />
-        </button>
+        <Menu
+          label="More actions"
+          align="end"
+          items={[
+            { label: "Reply", icon: "reply", hint: "R", disabled: isDraft, onSelect: () => handlers.current.r() },
+            { label: "Forward", icon: "send", hint: "F", disabled: isDraft, onSelect: () => openCompose(forward) },
+            { label: unread ? "Mark as read" : "Mark as unread", icon: unread ? "mailOpen" : "mail", disabled: isDraft, onSelect: toggleRead },
+            { type: "divider" },
+            { type: "heading", label: "Label as" },
+            ...labels.map((label) => ({
+              label: label.name,
+              checked: optimisticLabels.includes(label.id),
+              keepOpen: true,
+              onSelect: () => toggleLabel(label.id),
+            })),
+            { type: "divider" },
+            { label: "Print", icon: "print", onSelect: () => window.print() },
+          ]}
+        />
       </div>
     </div>
+  );
+}
+
+/** Per-message overflow in the reading pane. */
+export function MessageMenu({ forward, link }: { forward: ComposeDraft; link: string }) {
+  const { openCompose, showToast } = useMailUI();
+  return (
+    <Menu
+      label="Message actions"
+      align="end"
+      items={[
+        { label: "Reply", icon: "reply", onSelect: () => document.querySelector<HTMLElement>("#reply-input")?.focus() },
+        { label: "Forward", icon: "send", onSelect: () => openCompose(forward) },
+        {
+          label: "Copy link",
+          icon: "link",
+          onSelect: () => {
+            void navigator.clipboard?.writeText(new URL(link, window.location.origin).toString());
+            showToast({ message: "Link copied" });
+          },
+        },
+        { label: "Print", icon: "print", onSelect: () => window.print() },
+      ]}
+    />
+  );
+}
+
+/** Sort and bulk actions for the message list. */
+export function ListMenu({ mailbox, sort, query }: { mailbox: string; sort: SortOrder; query: string }) {
+  const router = useRouter();
+  const [, startTransition] = useTransition();
+  const sortHref = (next: SortOrder) => {
+    const params = new URLSearchParams(query);
+    if (next === "newest") params.delete("sort");
+    else params.set("sort", next);
+    const qs = params.toString();
+    return `/${mailbox}${qs ? `?${qs}` : ""}`;
+  };
+  const options: { value: SortOrder; label: string }[] = [
+    { value: "newest", label: "Newest first" },
+    { value: "oldest", label: "Oldest first" },
+    { value: "unread", label: "Unread first" },
+  ];
+  return (
+    <Menu
+      label="List options"
+      align="end"
+      items={[
+        { type: "heading", label: "Sort" },
+        ...options.map((option) => ({
+          label: option.label,
+          checked: sort === option.value,
+          onSelect: () => router.replace(sortHref(option.value)),
+        })),
+        { type: "divider" },
+        { label: "Mark all as read", icon: "check", onSelect: () => startTransition(() => markAllRead(mailbox)) },
+        { label: "Refresh", icon: "arrowDown", onSelect: () => router.refresh() },
+      ]}
+    />
+  );
+}
+
+export function AttachmentCard({ attachment, from }: { attachment: Attachment; from: string }) {
+  const { openPanel } = useMailUI();
+  return (
+    <button className="attachment-card" onClick={() => openPanel({ type: "attachment", attachment, from })}>
+      <div className={`file-icon file-${attachment.kind}`}>{attachment.kind.toUpperCase()}</div>
+      <div>
+        <strong>{attachment.name}</strong>
+        <span>{[attachment.size, attachment.detail].filter(Boolean).join(" · ")}</span>
+      </div>
+      <div className="download-icon" aria-hidden="true">
+        <Icon name="eye" size={16} />
+      </div>
+    </button>
   );
 }

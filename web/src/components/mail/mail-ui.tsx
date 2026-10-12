@@ -4,6 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 
 import ComposeWindow from "./compose-window";
 import Icon from "./icon";
+import Panels, { type Panel } from "./panels";
 
 export type ComposeDraft = {
   draftId?: string;
@@ -24,6 +25,9 @@ type MailUI = {
   showToast: (toast: ToastState) => void;
   sidebarOpen: boolean;
   setSidebarOpen: (open: boolean) => void;
+  panel: Panel | null;
+  openPanel: (panel: Panel) => void;
+  closePanel: () => void;
 };
 
 const MailUIContext = createContext<MailUI | null>(null);
@@ -43,6 +47,9 @@ export default function MailUIProvider({ children }: { children: ReactNode }) {
   const [compose, setCompose] = useState<ComposeDraft | null>(null);
   const [toast, setToast] = useState<ToastState | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [panel, setPanel] = useState<Panel | null>(null);
+  const openPanel = useCallback((next: Panel) => setPanel(next), []);
+  const closePanel = useCallback(() => setPanel(null), []);
   const toastTimer = useRef<number | undefined>(undefined);
 
   const openCompose = useCallback((draft?: Partial<ComposeDraft>) => {
@@ -64,11 +71,19 @@ export default function MailUIProvider({ children }: { children: ReactNode }) {
         document.getElementById("mail-search")?.focus();
         return;
       }
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "j") {
+        event.preventDefault();
+        setPanel((current) => (current?.type === "ai" ? null : { type: "ai" }));
+        return;
+      }
       if (event.key === "Escape") setSidebarOpen(false);
       if (isTypingTarget(event.target) || event.metaKey || event.ctrlKey || event.altKey) return;
       if (event.key === "c") {
         event.preventDefault();
         openCompose();
+      } else if (event.key === "?") {
+        event.preventDefault();
+        setPanel({ type: "shortcuts" });
       } else if (event.key === "/") {
         event.preventDefault();
         document.getElementById("mail-search")?.focus();
@@ -79,13 +94,14 @@ export default function MailUIProvider({ children }: { children: ReactNode }) {
   }, [openCompose]);
 
   const value = useMemo(
-    () => ({ compose, openCompose, closeCompose, showToast, sidebarOpen, setSidebarOpen }),
-    [compose, openCompose, closeCompose, showToast, sidebarOpen],
+    () => ({ compose, openCompose, closeCompose, showToast, sidebarOpen, setSidebarOpen, panel, openPanel, closePanel }),
+    [compose, openCompose, closeCompose, showToast, sidebarOpen, panel, openPanel, closePanel],
   );
 
   return (
     <MailUIContext.Provider value={value}>
       {children}
+      <Panels panel={panel} onClose={closePanel} onOpen={openPanel} />
       {compose && <ComposeWindow key={compose.draftId ?? "new"} initial={compose} />}
       {toast && (
         <div className="toast" role="status">

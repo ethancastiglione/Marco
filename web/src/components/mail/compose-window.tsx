@@ -5,6 +5,7 @@ import { useCallback, useState, useTransition } from "react";
 import { discardDraft, draftMessageWithAI, saveDraft, sendMessage, undoSend } from "@/app/actions";
 import { htmlToText, textToHtml } from "@/lib/mail/format";
 
+import { FileChips, useAttachments } from "./attachments";
 import Icon from "./icon";
 import { useMailUI, type ComposeDraft } from "./mail-ui";
 import RichEditor from "./rich-editor";
@@ -21,6 +22,7 @@ export default function ComposeWindow({ initial }: { initial: ComposeDraft }) {
   // Bumped to remount the editor when its content is replaced (e.g. by an AI draft).
   const [editorKey, setEditorKey] = useState(0);
   const [linkRequest, setLinkRequest] = useState(0);
+  const attachments = useAttachments();
 
   const onBodyChange = useCallback((html: string, text: string) => {
     setDraft((current) => ({ ...current, body: html }));
@@ -32,7 +34,7 @@ export default function ComposeWindow({ initial }: { initial: ComposeDraft }) {
 
   const recipients = [draft.to, cc].filter((value) => value.trim()).join(", ");
   const isEmpty = !recipients && !draft.subject.trim() && !bodyText.trim();
-  const message = { to: recipients, subject: draft.subject, body: draft.body, draftId: draft.draftId };
+  const message = { to: recipients, subject: draft.subject, body: draft.body, draftId: draft.draftId, attachments: attachments.files };
 
   const send = () => {
     if (!recipients) {
@@ -133,6 +135,8 @@ export default function ComposeWindow({ initial }: { initial: ComposeDraft }) {
             onChange={onBodyChange}
             linkRequest={linkRequest}
           />
+          <FileChips files={attachments.files} onRemove={attachments.remove} />
+          {attachments.picker}
           <div className="compose-footer">
             <button className="send-button" onClick={send} disabled={pending}>
               Send <kbd>⌘ ↵</kbd>
@@ -156,14 +160,14 @@ export default function ComposeWindow({ initial }: { initial: ComposeDraft }) {
               >
                 <Icon name="link" size={17} />
               </button>
-              <button className="icon-button" aria-label="Attach" title="Attachments need a connected mail provider" disabled>
+              <button className="icon-button" aria-label="Attach files" data-tooltip="Attach files" onClick={attachments.pick}>
                 <Icon name="paperclip" size={18} />
               </button>
-              <button className="icon-button ai-write" aria-label="Write with AI" onClick={writeWithAI} disabled={pending}>
+              <button className="icon-button ai-write" aria-label="Write with AI" data-tooltip="Write with AI" onClick={writeWithAI} disabled={pending}>
                 <Icon name="sparkle" size={17} />
               </button>
             </div>
-            <button className="icon-button compose-trash" aria-label="Discard" onClick={discard} disabled={pending}>
+            <button className="icon-button compose-trash" aria-label="Discard draft" data-tooltip="Discard draft" onClick={discard} disabled={pending}>
               <Icon name="trash" size={17} />
             </button>
           </div>

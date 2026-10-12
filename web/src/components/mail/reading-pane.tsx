@@ -1,6 +1,6 @@
 import { Fragment } from "react";
 
-import { bodyToHtml, firstName, formatMessageTime, initials } from "@/lib/mail/format";
+import { bodyToHtml, escapeHtml, firstName, formatMessageTime, initials } from "@/lib/mail/format";
 import { sanitizeEmailHtml } from "@/lib/mail/html";
 import type { Account, BodyBlock, Label, Message, Thread } from "@/lib/mail/types";
 
@@ -8,16 +8,25 @@ import { me } from "@/lib/mail/seed";
 
 import Icon from "./icon";
 import ReplyComposer from "./reply-composer";
-import { ContinueDraftButton, MarkReadOnOpen, RecipientsToggle, StarButton, ThreadToolbar } from "./thread-actions";
+import {
+  AttachmentCard,
+  ContinueDraftButton,
+  MarkReadOnOpen,
+  MessageMenu,
+  RecipientsToggle,
+  StarButton,
+  ThreadToolbar,
+} from "./thread-actions";
 
 type Props = {
   thread: Thread;
   label?: Label;
+  labels: Label[];
   account?: Account;
   /** True when the user opened this thread, rather than it being shown by default. */
   opened: boolean;
   position: { index: number; total: number };
-  hrefs: { list: string; prev?: string; next?: string; afterRemove: string };
+  hrefs: { self: string; list: string; prev?: string; next?: string; afterRemove: string };
 };
 
 function Body({ blocks }: { blocks: BodyBlock[] }) {
@@ -53,7 +62,23 @@ function recipientSummary(message: Message) {
   return `to me & ${others} ${others === 1 ? "other" : "others"}`;
 }
 
-function IncomingMessage({ message }: { message: Message }) {
+function forwardDraft(thread: Thread, message: Message) {
+  const header = [
+    "---------- Forwarded message ---------",
+    `From: ${message.from.name} <${message.from.email}>`,
+    `Date: ${formatMessageTime(message.sentAt)}`,
+    `Subject: ${thread.subject}`,
+  ]
+    .map((line) => `<div>${escapeHtml(line)}</div>`)
+    .join("");
+  return {
+    to: "",
+    subject: /^fwd:/i.test(thread.subject) ? thread.subject : `Fwd: ${thread.subject}`,
+    body: `<div><br></div>${header}<div><br></div>${bodyToHtml(message.body)}`,
+  };
+}
+
+function IncomingMessage({ message, thread, link }: { message: Message; thread: Thread; link: string }) {
   return (
     <div className="thread-message">
       <div className="sender-row">
@@ -69,9 +94,7 @@ function IncomingMessage({ message }: { message: Message }) {
         </div>
         <div className="sender-actions">
           <span>{formatMessageTime(message.sentAt)}</span>
-          <button className="icon-button" aria-label="More">
-            <Icon name="dots" size={18} />
-          </button>
+          <MessageMenu forward={forwardDraft(thread, message)} link={link} />
         </div>
       </div>
 
@@ -79,18 +102,13 @@ function IncomingMessage({ message }: { message: Message }) {
         <Body blocks={message.body} />
       </div>
 
-      {message.attachments.map((attachment) => (
-        <div className="attachment-card" key={attachment.id}>
-          <div className="file-icon">{attachment.kind.toUpperCase()}</div>
-          <div>
-            <strong>{attachment.name}</strong>
-            <span>{[attachment.size, attachment.detail].filter(Boolean).join(" · ")}</span>
-          </div>
-          <div className="download-icon" title="Downloads need a connected mail provider">
-            <Icon name="arrowDown" size={17} />
-          </div>
+      {message.attachments.length > 0 && (
+        <div className="attachment-list">
+          {message.attachments.map((attachment) => (
+            <AttachmentCard attachment={attachment} from={message.from.name} key={attachment.id} />
+          ))}
         </div>
-      ))}
+      )}
     </div>
   );
 }
@@ -105,6 +123,16 @@ function SentMessage({ message }: { message: Message }) {
       <div className="sent-body">
         <Body blocks={message.body} />
       </div>
+      {message.attachments.length > 0 && (
+        <div className="sent-attachments">
+          {message.attachments.map((attachment) => (
+            <span className="file-chip" key={attachment.id}>
+              <Icon name="paperclip" size={12} />
+              {attachment.name}
+            </span>
+          ))}
+        </div>
+      )}
       <div className={`read-receipt ${message.readAt ? "read" : ""}`}>
         <Icon name={message.readAt ? "checkDouble" : "check"} size={12} />
         {message.readAt ? `Read ${formatMessageTime(message.readAt)}` : "Sent · not opened yet"}
@@ -113,7 +141,7 @@ function SentMessage({ message }: { message: Message }) {
   );
 }
 
-export default function ReadingPane({ thread, label, account, opened, position, hrefs }: Props) {
+export default function ReadingPane({ thread, label, labels, account, opened, position, hrefs }: Props) {
   const isDraft = thread.location === "drafts";
   const lead = thread.participants[0];
 
@@ -126,6 +154,9 @@ export default function ReadingPane({ thread, label, account, opened, position, 
         unread={thread.unread}
         position={position}
         hrefs={hrefs}
+        labels={labels}
+        labelIds={thread.labelIds}
+        forward={forwardDraft(thread, thread.messages[thread.messages.length - 1])}
       />
 
       <article className="email-content">
@@ -150,7 +181,7 @@ export default function ReadingPane({ thread, label, account, opened, position, 
             message.fromMe ? (
               <SentMessage message={message} key={message.id} />
             ) : (
-              <IncomingMessage message={message} key={message.id} />
+              <IncomingMessage message={message} thread={thread} link={hrefs.self} key={message.id} />
             ),
           )}
         </div>
@@ -172,12 +203,12 @@ export default function ReadingPane({ thread, label, account, opened, position, 
   );
 }
 
-export function EmptyReadingPane() {
+export function EmptyReadingPane({ search }: { search?: boolean }) {
   return (
     <section className="reading-pane no-selection">
-      <Icon name="check" size={28} />
-      <strong>Inbox zero, for now</strong>
-      <span>You’ve cleared every message in this view.</span>
+      <Icon name={search ? "search" : "check"} size={28} />
+      <strong>{search ? "Nothing selected" : "Inbox zero, for now"}</strong>
+      <span>{search ? "Search results open here." : "You’ve cleared every message in this view."}</span>
     </section>
   );
 }

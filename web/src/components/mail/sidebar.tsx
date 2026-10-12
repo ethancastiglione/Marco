@@ -4,7 +4,9 @@ import { workspace } from "@/lib/mail/seed";
 import { initials } from "@/lib/mail/format";
 
 import Icon from "./icon";
-import { AddLabel, ComposeButton, NavLink, SidebarFrame } from "./sidebar-client";
+import Link from "next/link";
+
+import { AccountMenu, AddLabel, AskAsterButton, ComposeButton, NavLink, SidebarFrame, WorkspaceMenu } from "./sidebar-client";
 
 const navItems = [
   { href: "/inbox", icon: "inbox", label: "Inbox", count: "inbox" },
@@ -23,16 +25,14 @@ export default async function Sidebar() {
   return (
     <SidebarFrame>
       <div className="workspace-row">
-        <button className="app-mark" aria-label="Aster home">
+        <Link className="app-mark" aria-label="Aster home" href="/inbox">
           {workspace.name[0]}
-        </button>
-        <div>
+        </Link>
+        <div className="workspace-name">
           <strong>{workspace.name}</strong>
           <span className="eyebrow">{workspace.kind}</span>
         </div>
-        <button className="icon-button subtle" aria-label="Workspace options">
-          <Icon name="dots" size={17} />
-        </button>
+        <WorkspaceMenu />
       </div>
 
       <ComposeButton />
@@ -63,27 +63,8 @@ export default async function Sidebar() {
       </AddLabel>
 
       <div className="sidebar-spacer" />
-      <div className="storage-card">
-        <div className="storage-icon">
-          <Icon name="sparkle" size={16} />
-        </div>
-        <div>
-          <strong>Ask Aster AI</strong>
-          <span>Search, summarize, write</span>
-        </div>
-        <kbd>⌘ J</kbd>
-      </div>
-      <button className="account-row">
-        <span className="profile-avatar">
-          {initials(me.name)}
-          <span className="presence-dot" />
-        </span>
-        <span>
-          <strong>{me.name}</strong>
-          <small>{me.email}</small>
-        </span>
-        <Icon name="dots" size={16} />
-      </button>
+      <AskAsterButton />
+      <AccountMenu name={me.name} email={me.email} initials={initials(me.name)} />
     </SidebarFrame>
   );
 }

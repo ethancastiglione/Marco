@@ -8,6 +8,7 @@ import { createLabel } from "@/app/actions";
 
 import Icon from "./icon";
 import { useMailUI } from "./mail-ui";
+import Menu from "./menu";
 
 export function SidebarFrame({ children }: { children: ReactNode }) {
   const { sidebarOpen, setSidebarOpen } = useMailUI();
@@ -98,5 +99,68 @@ export function AddLabel({ children }: { children: ReactNode }) {
         </form>
       )}
     </>
+  );
+}
+
+export function WorkspaceMenu() {
+  const { openPanel } = useMailUI();
+  return (
+    <Menu
+      label="Workspace options"
+      triggerClassName="icon-button subtle"
+      align="end"
+      items={[
+        { label: "Settings", icon: "settings", onSelect: () => openPanel({ type: "settings" }) },
+        { label: "Manage accounts", icon: "users", onSelect: () => openPanel({ type: "settings", tab: "accounts" }) },
+        { label: "Keyboard shortcuts", icon: "compose", hint: "?", onSelect: () => openPanel({ type: "shortcuts" }) },
+      ]}
+    />
+  );
+}
+
+export function AskAsterButton() {
+  const { openPanel } = useMailUI();
+  return (
+    <button className="storage-card" onClick={() => openPanel({ type: "ai" })}>
+      <span className="storage-icon">
+        <Icon name="sparkle" size={16} />
+      </span>
+      <span>
+        <strong>Ask Aster AI</strong>
+        <span>Search, summarize, write</span>
+      </span>
+      <kbd>⌘ J</kbd>
+    </button>
+  );
+}
+
+export function AccountMenu({ name, email, initials }: { name: string; email: string; initials: string }) {
+  const { openPanel } = useMailUI();
+  return (
+    <Menu
+      label="Account options"
+      triggerClassName="account-row"
+      placement="above"
+      trigger={
+        <>
+          <span className="profile-avatar">
+            {initials}
+            <span className="presence-dot" />
+          </span>
+          <span>
+            <strong>{name}</strong>
+            <small>{email}</small>
+          </span>
+          <Icon name="dots" size={16} />
+        </>
+      }
+      items={[
+        { label: "Settings", icon: "settings", onSelect: () => openPanel({ type: "settings" }) },
+        { label: "Signature", icon: "compose", onSelect: () => openPanel({ type: "settings", tab: "signature" }) },
+        { label: "Add another account", icon: "users", onSelect: () => openPanel({ type: "add-account" }) },
+        { type: "divider" },
+        { label: "Keyboard shortcuts", icon: "mail", hint: "?", onSelect: () => openPanel({ type: "shortcuts" }) },
+      ]}
+    />
   );
 }
