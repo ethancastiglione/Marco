@@ -1,0 +1,11 @@
+{
+  "title": "rj fds fj srkwp",
+  "description": "This email client combines the sleek design of Google and OpenAI with the powerful features of Superhuman, enhancing productivity for professionals.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}
