@@ -5,6 +5,8 @@ A Next.js 16 rebuild of the Figma Make prototype that lives at the repo root (`.
 ```bash
 pnpm install
 pnpm dev        # http://localhost:3000 → redirects to /inbox
+pnpm typecheck  # generates Next's route types, then runs tsc
+pnpm build
 ```
 
 ## Layout
