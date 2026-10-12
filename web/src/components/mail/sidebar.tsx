@@ -6,7 +6,7 @@ import { initials } from "@/lib/mail/format";
 import Icon from "./icon";
 import Link from "next/link";
 
-import { AccountMenu, AddLabel, AskAsterButton, ComposeButton, NavLink, SidebarFrame, WorkspaceMenu } from "./sidebar-client";
+import { AccountMenu, AddLabel, AskIndexButton, ComposeButton, NavLink, SidebarFrame, WorkspaceMenu } from "./sidebar-client";
 
 const navItems = [
   { href: "/inbox", icon: "inbox", label: "Inbox", count: "inbox" },
@@ -25,7 +25,7 @@ export default async function Sidebar() {
   return (
     <SidebarFrame>
       <div className="workspace-row">
-        <Link className="app-mark" aria-label="Aster home" href="/inbox">
+        <Link className="app-mark" aria-label="Index home" href="/inbox">
           {workspace.name[0]}
         </Link>
         <div className="workspace-name">
@@ -63,7 +63,7 @@ export default async function Sidebar() {
       </AddLabel>
 
       <div className="sidebar-spacer" />
-      <AskAsterButton />
+      <AskIndexButton />
       <AccountMenu name={me.name} email={me.email} initials={initials(me.name)} />
     </SidebarFrame>
   );

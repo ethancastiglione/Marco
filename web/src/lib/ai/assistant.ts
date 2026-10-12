@@ -4,7 +4,7 @@ import { firstName } from "@/lib/mail/format";
 import { mail } from "@/lib/mail/store";
 import type { AvatarTone, ThreadSummary } from "@/lib/mail/types";
 
-export type AsterReference = {
+export type IndexReference = {
   id: string;
   href: string;
   sender: string;
@@ -14,11 +14,11 @@ export type AsterReference = {
   note: string;
 };
 
-export type AsterAnswer = { text: string; references: AsterReference[] };
+export type IndexAnswer = { text: string; references: IndexReference[] };
 
 const firstSentence = (text: string) => (text.match(/^.*?[.!?](\s|$)/)?.[0] ?? text).trim().slice(0, 120);
 
-function reference(thread: ThreadSummary, mailbox: string, note = firstSentence(thread.preview)): AsterReference {
+function reference(thread: ThreadSummary, mailbox: string, note = firstSentence(thread.preview)): IndexReference {
   return {
     id: thread.id,
     href: `/${mailbox}/${thread.id}`,
@@ -35,7 +35,7 @@ function reference(thread: ThreadSummary, mailbox: string, note = firstSentence(
  * intents so the panel is useful without credentials; swap it for a model call with
  * the same inputs (prompt + visible threads) and output shape.
  */
-export async function askAster(prompt: string, accounts: string[]): Promise<AsterAnswer> {
+export async function askIndex(prompt: string, accounts: string[]): Promise<IndexAnswer> {
   const question = prompt.toLowerCase();
   const inbox = await mail.listThreads({ mailbox: "inbox", accounts });
 

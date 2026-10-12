@@ -4,7 +4,7 @@ import { cookies } from "next/headers";
 
 import { mail } from "./store";
 
-export const ACCOUNTS_COOKIE = "aster-accounts";
+export const ACCOUNTS_COOKIE = "index-accounts";
 
 /** All connected accounts, plus the ids the viewer has checked in the top bar (default: all). */
 export async function getAccountFilter() {

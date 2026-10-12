@@ -1330,7 +1330,7 @@ code { padding: 1px 4px; border-radius: 4px; color: var(--text); background: var
 .doc-block { height: 54px; margin: 4px 0; border-radius: 3px; background: var(--surface-2); }
 .doc-page-number { position: absolute; right: 0; bottom: 10px; left: 0; color: var(--faint); font-size: var(--text-2xs); text-align: center; }
 
-/* Ask Aster panel */
+/* Ask Index panel */
 .ai-panel {
   position: fixed;
   top: 12px;
@@ -1356,7 +1356,7 @@ code { padding: 1px 4px; border-radius: 4px; color: var(--text); background: var
 .ai-empty strong { color: var(--ink); font-size: 16px; font-weight: 600; letter-spacing: -.02em; }
 .ai-bubble { max-width: 92%; padding: 10px 13px; border-radius: 14px; font-size: var(--text-sm); line-height: 1.55; }
 .ai-bubble.user { align-self: flex-end; border-bottom-right-radius: 4px; color: #fff; background: var(--ink); }
-.ai-bubble.aster { align-self: flex-start; border-bottom-left-radius: 4px; color: var(--text); background: var(--fill); }
+.ai-bubble.assistant { align-self: flex-start; border-bottom-left-radius: 4px; color: var(--text); background: var(--fill); }
 .ai-bubble p { margin: 0; }
 .ai-refs { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
 .ai-ref { display: flex; align-items: flex-start; gap: 9px; padding: 8px 9px; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--surface); }

@@ -1,25 +1,25 @@
 import type { Account, Label, Person, Thread } from "./types";
 
-export const me: Person = { name: "Noah Smith", email: "noah@aster.ai", avatar: "light" };
+export const me: Person = { name: "Noah Smith", email: "noah@index.ai", avatar: "light" };
 
 export const seedAccounts: Account[] = [
-  { id: "work", name: "Aster Labs", email: "noah@aster.ai", initial: "A", color: "ink" },
+  { id: "work", name: "Index Labs", email: "noah@index.ai", initial: "I", color: "ink" },
   { id: "personal", name: "Personal", email: "noah.smith@gmail.com", initial: "N", color: "red" },
   { id: "studio", name: "Smith Studio", email: "hello@smith.studio", initial: "S", color: "blue" },
 ];
 
-export const workspace = { name: "Aster Labs", kind: "Team workspace" };
+export const workspace = { name: "Index Labs", kind: "Team workspace" };
 
 const people = {
-  maya: { name: "Maya Chen", email: "maya@aster.ai", avatar: "coral" },
+  maya: { name: "Maya Chen", email: "maya@index.ai", avatar: "coral" },
   linear: { name: "Linear", email: "notifications@linear.app", avatar: "dark" },
   jon: { name: "Jon Bell", email: "jon@bellstudio.co", avatar: "blue" },
-  priya: { name: "Priya Shah", email: "priya@aster.ai", avatar: "violet" },
-  dana: { name: "Dana Ortiz", email: "dana@aster.ai", avatar: "green" },
-  leo: { name: "Leo Park", email: "leo@aster.ai", avatar: "amber" },
-  ines: { name: "Inès Morel", email: "ines@aster.ai", avatar: "pink" },
+  priya: { name: "Priya Shah", email: "priya@index.ai", avatar: "violet" },
+  dana: { name: "Dana Ortiz", email: "dana@index.ai", avatar: "green" },
+  leo: { name: "Leo Park", email: "leo@index.ai", avatar: "amber" },
+  ines: { name: "Inès Morel", email: "ines@index.ai", avatar: "pink" },
   notion: { name: "Notion", email: "notify@mail.notion.so", avatar: "light" },
-  alex: { name: "Alex Morgan", email: "alex@aster.ai", avatar: "green" },
+  alex: { name: "Alex Morgan", email: "alex@index.ai", avatar: "green" },
   figma: { name: "Figma", email: "comments@figma.com", avatar: "pink" },
   ruth: { name: "Ruth Alvarez", email: "ruth@fernandcoast.com", avatar: "violet" },
   mom: { name: "Mom", email: "linda.smith@gmail.com", avatar: "coral" },
@@ -108,7 +108,7 @@ export function seedThreads(now = new Date()): Thread[] {
                 { title: "Calendar sync", text: "New project created by Leo Park." },
               ],
             },
-            { type: "p", text: "You're receiving this because you're a member of Aster Labs." },
+            { type: "p", text: "You're receiving this because you're a member of Index Labs." },
           ],
           attachments: [],
         },

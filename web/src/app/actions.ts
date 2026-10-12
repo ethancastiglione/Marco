@@ -4,7 +4,7 @@ import { refresh } from "next/cache";
 import { cookies } from "next/headers";
 
 import { draftMessage, draftReply } from "@/lib/ai/draft";
-import { askAster as answer } from "@/lib/ai/assistant";
+import { askIndex as answer } from "@/lib/ai/assistant";
 import { ACCOUNTS_COOKIE, getAccountFilter } from "@/lib/mail/accounts";
 import { freeText, parseQuery, tokenize } from "@/lib/mail/search";
 import { mail } from "@/lib/mail/store";
@@ -90,7 +90,7 @@ export async function searchSuggestions(query: string): Promise<SearchSuggestion
   return { people, messages: messages.slice(0, 5), labels, accounts };
 }
 
-export async function askAster(prompt: string) {
+export async function askIndex(prompt: string) {
   const { enabled } = await getAccountFilter();
   return answer(prompt, enabled);
 }

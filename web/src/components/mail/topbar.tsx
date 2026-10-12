@@ -11,7 +11,7 @@ import type { SearchSuggestions } from "@/lib/mail/types";
 import Icon from "./icon";
 import { useMailUI } from "./mail-ui";
 
-const RECENT_KEY = "aster-recent-searches";
+const RECENT_KEY = "index-recent-searches";
 const MAILBOXES = ["inbox", "sent", "archive", "drafts", "trash", "starred", "snoozed"];
 
 function loadRecent(): string[] {

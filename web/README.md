@@ -1,4 +1,4 @@
-# Aster Mail — Next.js
+# Index — Next.js
 
 A Next.js 16 rebuild of the Figma Make prototype that lives at the repo root (`../src`). The Make files are left untouched so Make can keep syncing.
 

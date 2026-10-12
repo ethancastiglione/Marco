@@ -8,7 +8,7 @@ import type { Account } from "@/lib/mail/types";
 import Icon from "./icon";
 import { useMailUI } from "./mail-ui";
 
-const COOKIE = "aster-accounts";
+const COOKIE = "index-accounts";
 
 export default function AccountSwitcher({ accounts, enabled }: { accounts: Account[]; enabled: string[] }) {
   const router = useRouter();

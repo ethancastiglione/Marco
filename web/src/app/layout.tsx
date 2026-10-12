@@ -10,7 +10,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Aster Mail",
+  title: "Index",
   description:
     "An email client that pairs a calm, minimal design with the speed and AI features of Superhuman.",
   robots: { index: false },

@@ -4,8 +4,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition, type FormEvent } from "react";
 
-import { addAccount, askAster, getAccounts } from "@/app/actions";
-import type { AsterAnswer } from "@/lib/ai/assistant";
+import { addAccount, askIndex, getAccounts } from "@/app/actions";
+import type { IndexAnswer } from "@/lib/ai/assistant";
 import type { Account, Attachment } from "@/lib/mail/types";
 
 import Icon from "./icon";
@@ -49,7 +49,7 @@ export const SHORTCUTS = [
       ["⌘ K", "Insert link"],
       ["⌘ B", "Bold"],
       ["⌘ I", "Italic"],
-      ["⌘ J", "Ask Aster AI"],
+      ["⌘ J", "Ask Index AI"],
     ],
   },
 ] as const;
@@ -74,7 +74,7 @@ export default function Panels({
     case "attachment":
       return <AttachmentModal attachment={panel.attachment} from={panel.from} onClose={onClose} />;
     case "ai":
-      return <AsterPanel onClose={onClose} />;
+      return <IndexPanel onClose={onClose} />;
   }
 }
 
@@ -205,7 +205,7 @@ function SettingsModal({ initialTab, onClose, onAddAccount }: { initialTab: Sett
           {tab === "signature" && (
             <>
               <h3 className="section-label">Signature</h3>
-              <textarea className="field textarea" rows={5} defaultValue={"Noah Smith\nAster Labs · noah@aster.ai"} aria-label="Signature" />
+              <textarea className="field textarea" rows={5} defaultValue={"Noah Smith\nIndex Labs · noah@index.ai"} aria-label="Signature" />
               <Toggle label="Add to replies and forwards" defaultOn />
             </>
           )}
@@ -214,7 +214,7 @@ function SettingsModal({ initialTab, onClose, onAddAccount }: { initialTab: Sett
               <h3 className="section-label">Desktop notifications</h3>
               <Segmented label="Notify me about" options={["All mail", "Important", "Off"]} defaultValue="Important" />
               <Toggle label="Play a sound" />
-              <Toggle label="Daily digest" hint="A morning summary from Aster AI" defaultOn />
+              <Toggle label="Daily digest" hint="A morning summary from Index AI" defaultOn />
             </>
           )}
         </div>
@@ -262,7 +262,7 @@ function AddAccountModal({ onClose }: { onClose: () => void }) {
   return (
     <Modal
       title={provider ? `Connect ${provider.name}` : "Add an account"}
-      description={provider ? provider.detail : "Bring another inbox into Aster."}
+      description={provider ? provider.detail : "Bring another inbox into Index."}
       onClose={onClose}
       size="sm"
       footer={
@@ -288,7 +288,7 @@ function AddAccountModal({ onClose }: { onClose: () => void }) {
             Display name <small>optional</small>
             <input className="field" placeholder="e.g. Personal" value={name} onChange={(event) => setName(event.target.value)} />
           </label>
-          <p className="form-note">Aster signs in through {provider.name} — your password is never stored here.</p>
+          <p className="form-note">Index signs in through {provider.name} — your password is never stored here.</p>
         </form>
       ) : (
         <div className="provider-list">
@@ -348,9 +348,9 @@ function AttachmentModal({ attachment, from, onClose }: { attachment: Attachment
 
 const SUGGESTIONS = ["Summarize my unread mail", "What needs a reply from me?", "Find attachments", "Anything about the offsite?"];
 
-type Turn = { role: "user"; text: string } | { role: "aster"; answer: AsterAnswer };
+type Turn = { role: "user"; text: string } | { role: "assistant"; answer: IndexAnswer };
 
-function AsterPanel({ onClose }: { onClose: () => void }) {
+function IndexPanel({ onClose }: { onClose: () => void }) {
   const [turns, setTurns] = useState<Turn[]>([]);
   const [prompt, setPrompt] = useState("");
   const [pending, startTransition] = useTransition();
@@ -380,19 +380,19 @@ function AsterPanel({ onClose }: { onClose: () => void }) {
     setPrompt("");
     setTurns((current) => [...current, { role: "user", text: question }]);
     startTransition(async () => {
-      const answer = await askAster(question);
-      setTurns((current) => [...current, { role: "aster", answer }]);
+      const answer = await askIndex(question);
+      setTurns((current) => [...current, { role: "assistant", answer }]);
     });
   };
 
   return (
-    <aside className="ai-panel" aria-label="Ask Aster AI" ref={panelRef}>
+    <aside className="ai-panel" aria-label="Ask Index AI" ref={panelRef}>
       <header className="ai-header">
         <span className="storage-icon">
           <Icon name="sparkle" size={15} />
         </span>
         <div>
-          <strong>Ask Aster</strong>
+          <strong>Ask Index</strong>
           <small>Answers from the inboxes you have selected</small>
         </div>
         <button className="icon-button" aria-label="Close" onClick={onClose}>
@@ -413,7 +413,7 @@ function AsterPanel({ onClose }: { onClose: () => void }) {
               {turn.text}
             </div>
           ) : (
-            <div className="ai-bubble aster" key={index}>
+            <div className="ai-bubble assistant" key={index}>
               <p>{turn.answer.text}</p>
               {turn.answer.references.length > 0 && (
                 <div className="ai-refs">
@@ -434,7 +434,7 @@ function AsterPanel({ onClose }: { onClose: () => void }) {
           ),
         )}
         {pending && (
-          <div className="ai-bubble aster typing" aria-label="Aster is thinking">
+          <div className="ai-bubble assistant typing" aria-label="Index is thinking">
             <span />
             <span />
             <span />

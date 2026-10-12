@@ -115,7 +115,7 @@ export function WorkspaceMenu() {
   );
 }
 
-export function AskAsterButton() {
+export function AskIndexButton() {
   const { openPanel } = useMailUI();
   return (
     <button className="storage-card" onClick={() => openPanel({ type: "ai" })}>
@@ -123,7 +123,7 @@ export function AskAsterButton() {
         <Icon name="sparkle" size={16} />
       </span>
       <span>
-        <strong>Ask Aster AI</strong>
+        <strong>Ask Index AI</strong>
         <span>Search, summarize, write</span>
       </span>
       <kbd>⌘ J</kbd>
